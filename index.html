@@ -4,22 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResilientCare.ai</title>
-    <link rel = "stylesheet" href="style.css">
-    <script src = "script.js"></script>
-
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
 </head>
 <body>
-    <!-- Landing Page -->
-<div class="landing-page">
-    <h1>ResilientCare</h1>
-    <p>Your compassionate AI companion.</p>
-    <a href="#Vent" class="btn">Hold to Vent<p>Let it all out</p></a>
-    <a href="#Insights" class="btn">View Insights</a>
-    <a href="#History" class="btn">View History</a>
-    <a href="#Settings" class="btn">View Settings</a>
+    <div class="landing-page">
+        <h1>ResilientCare</h1>
+        <p>Your compassionate AI companion.</p>
 
-</div>
+        <a href="#Vent" class="btn-vent">
+            <b>Hold to Vent</b>
+            <p>Let it all out</p>
+        </a>
 
-    
+        <div class="dropdown-wrapper">
+            <button class="dropdown-btn" onclick="toggleDropdown()">
+                <h2>Select a Mode:</h2>
+                <span class="arrow">▼</span>
+            </button>
+
+            <div id="modeDropdown" class="mode-menu">
+                <div class="mode-card active">
+                    <div class="icon-box heart">💙</div>
+                    <div class="mode-text">
+                        <strong>Empathetic</strong>
+                        <p>Warm and validating</p>
+                    </div>
+                </div>
+
+                <div class="mode-card">
+                    <div class="icon-box lightning">⚡</div>
+                    <div class="mode-text">
+                        <strong>Direct</strong>
+                        <p>Action-oriented</p>
+                    </div>
+                </div>
+
+                <div class="mode-card">
+                    <div class="icon-box scale">⚖️</div>
+                    <div class="mode-text">
+                        <strong>Balanced</strong>
+                        <p>Blend of both</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <a href="#Insights" class="btn-insights">View Insights</a>
+            <a href="#History" class="btn-history">View History</a>
+            <a href="#Settings" class="btn-settings">View Settings</a>
+        </div>
+    </div>
 </body>
 </html>

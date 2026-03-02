@@ -1,6 +1,4 @@
-function main() {
-    console.log('Hello, World!');
+function toggleDropdown() {
+    const menu = document.getElementById("modeDropdown");
+    menu.classList.toggle("show");
 }
-
-
-main();

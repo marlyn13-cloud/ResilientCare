@@ -1,13 +1,156 @@
+/* 1. Global Reset & Body */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+body {
+    background: linear-gradient(to bottom, #f0f7ff, #ffffff); /* Matches soft design background */
+}
+
 .landing-page {
     font-family: Arial, sans-serif;
-    color: #e234e2;
-    margin: 10;
+    color: #8e34e2;
     padding: 20px;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    gap: 20px;
+}
+
+/* 2. The Main Circular Vent Button */
+.btn-vent {
+    background: radial-gradient(circle, #ffffff 0%, #65a2f8 100%);
+    box-shadow: 0 10px 30px rgba(66, 133, 244, 0.2);
+    color: #524b4b;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%; /* Perfect Circle */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.btn-vent:active {
+    transform: scale(0.95); /* Feedback when "holding" to vent */
+}
+
+.btn-vent p {
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* 3. Dropdown Selection Area */
+.dropdown-wrapper {
+    width: 100%;
+    max-width: 320px;
+    margin: 20px 0;
+}
+
+.dropdown-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 50px; /* Pill Shape */
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-btn h2 {
+    font-size: 18px;
+    color: #333;
+}
+
+/* 4. The Toggled Menu */
+#modeDropdown {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+#modeDropdown.show {
+    display: flex; /* Triggered by JS */
+}
+
+/* 5. Mode Card Styling */
+.mode-card {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.mode-card.active {
+    border-color: #4a90e2; /* Highlighted blue border */
+    background-color: #f8fbff;
+}
+
+.icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+}
+
+.heart { background-color: #e8f0fe; }
+.lightning { background-color: #f1f3f4; }
+.scale { background-color: #f1f3f4; }
+
+.mode-text strong {
+    display: block;
+    color: #333;
+    font-size: 16px;
+}
+
+.mode-text p {
+    color: #666;
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+    background: none; /* Overriding your previous generic p styling */
+}
+
+/* 6. Action Row (Horizontal Bottom Buttons) */
+.action-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap; /* Good for mobile */
+}
+
+.btn-insights, .btn-history, .btn-settings {
+    background-color: #ffffff;
+    color: #333;
+    padding: 12px 20px;
+    border: 2px solid #a8a3a3;
+    border-radius: 50px;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-insights:hover, .btn-history:hover, .btn-settings:hover {
+    background-color: #f0f0f0;
 }
