@@ -45,7 +45,27 @@ body {
     font-size: 14px;
     margin-top: 10px;
 }
+.vent-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 220px;
+    height: 220px;
+}
 
+.progress-ring {
+    position: absolute;
+    transform: rotate(-90deg); /* Starts the loading at the top */
+    pointer-events: none; 
+}
+
+.progress-ring__circle {
+    stroke-dasharray: 597; 
+    stroke-dashoffset: 597; 
+    transition: stroke-dashoffset 0.1s linear;
+    stroke-linecap: round;
+}
 /* 3. Dropdown Selection Area */
 .dropdown-wrapper {
     width: 100%;

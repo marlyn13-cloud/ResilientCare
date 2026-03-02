@@ -5,19 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResilientCare.ai</title>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-</head>
+    <script src="script.js" defer></script> </head>
 <body>
     <div class="landing-page">
         <h1>ResilientCare</h1>
         <p>Your compassionate AI companion.</p>
 
-        <a href="#Vent" class="btn-vent">
-            <b>Hold to Vent</b>
-            <p>Let it all out</p>
-        </a>
-
-        <div class="dropdown-wrapper">
+        <div class="vent-container">
+            <svg class="progress-ring" width="220" height="220">
+                <circle class="progress-ring__circle" stroke="#4a90e2" stroke-width="8" fill="transparent" r="95" cx="110" cy="110"/>
+            </svg>
+            <a href="#Vent" class="btn-vent">
+                <b>Hold to Vent</b>
+                <p>Let it all out</p>
+            </a>
+        </div> <div class="dropdown-wrapper">
             <button class="dropdown-btn" onclick="toggleDropdown()">
                 <h2>Select a Mode:</h2>
                 <span class="arrow">▼</span>
