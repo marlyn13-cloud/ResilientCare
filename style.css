@@ -1,0 +1,13 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.landing-page {
+    font-family: Arial, sans-serif;
+    color: #e234e2;
+    margin: 10;
+    padding: 20px;
+    display: flex;
+}
