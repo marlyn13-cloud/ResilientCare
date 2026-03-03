@@ -13,7 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
             card.classList.add("active");
         });
     });
+    // Date function
+function updateDate() {
+    const now = new Date();
+    
+    // Formatting options 
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    };
 
+    const formattedDate = now.toLocaleDateString('en-US', options);
+    
+    document.getElementById('current-date').innerText = formattedDate;
+}
+
+updateDate();
     // 2. Vent Button Hold Logic
     const circle = document.querySelector('.progress-ring__circle');
     const ventBtn = document.querySelector('.btn-vent');
