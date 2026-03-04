@@ -7,6 +7,16 @@
 body {
     background: linear-gradient(to bottom, #f0f7ff, #ffffff); /* Matches soft design background */
 }
+.screen {
+    width: 100vw;
+    height: 100vh;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 .landing-page {
     font-family: Arial, sans-serif;
@@ -73,6 +83,135 @@ body {
     stroke-dashoffset: 597; 
     transition: stroke-dashoffset 0.1s linear;
     stroke-linecap: round;
+}
+
+/* Loading vent box tab */
+.vent-trigger {
+    background: radial-gradient(circle, #E0E7FF 0%, #EEF2FF 100%);
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.vent-trigger:active {
+    transform: scale(0.95); /* Shrinks slightly when pressed */
+}
+.vent-box-layout{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(180deg, #EBF0FF 0%, #FFFFFF 60%);
+}
+.vent-nav{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background:#ffffff;
+    width: 100%;
+    border-bottom: 1px solid #E5E7EB;
+}
+.nav-title {
+    font-size: 22px;
+    color: #333;
+    font-weight: 600;
+}
+.icon-btn{
+    background: transparent;
+    border:none;
+    color: #524b4b;
+    width: 55px;
+    font-size: medium;
+    height: 50px;
+    border-radius: 10%; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+.icon-btn:active {
+    transform: scale(0.9); /* Feedback when pressing */
+}
+.vent-main{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px 20px 20px;
+    text-align: center;
+}
+.hero-emoji {
+    font-size: 50px;
+    margin-bottom: 15px;
+}
+.vent-main h2 {
+    color: #1F2937;
+    font-size: 24px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.vent-main p {
+    color: #6B7280;
+    font-size: 24px;
+    line-height: 1.5;
+    max-width: 280px;
+}
+.input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    padding: 15px 20px;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+textarea {
+    flex: 1;
+    height: 50px;
+    border: 1px solid #D1D5DB;
+    border-radius: 12px;
+    padding: 14px 15px;
+    font-size: 15px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    color: #374151;
+}
+
+textarea::placeholder {
+    color: #9CA3AF;
+}
+.send-fab{
+    background: radial-gradient(circle, #4a90e2 0%, #357ABD 100%);
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    border-radius: 30%;
+    display: flex;
+    align-items: right;
+    justify-content: center;
+    font-size: 19px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(74,144,226,0.3);
+    margin-left: auto;
+    transition: transform 0.2s ease;
 }
 /* 3. Dropdown Selection Area */
 .dropdown-wrapper {

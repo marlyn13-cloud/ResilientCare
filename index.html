@@ -5,59 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResilientCare.ai</title>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script> </head>
+    <script src="script.js" defer></script>
+</head>
 <body>
-    <div class="landing-page">
-        <h1>ResilientCare</h1>
-        <p>Your compassionate AI companion.</p>
-        
-        <p id="current-date"></p>
-        <div class="vent-container">
-            <svg class="progress-ring" width="220" height="220">
-                <circle class="progress-ring__circle" stroke="#4a90e2" stroke-width="8" fill="transparent" r="95" cx="110" cy="110"/>
-            </svg>
-            <a href="#Vent" class="btn-vent">
-                <b>Hold to Vent</b>
-                <p>Let it all out</p>
-            </a>
-        </div> <div class="dropdown-wrapper">
-            <button class="dropdown-btn" onclick="toggleDropdown()">
-                <h2>Select a Mode:</h2>
-                <span class="arrow">▼</span>
-            </button>
 
-            <div id="modeDropdown" class="mode-menu">
-                <div class="mode-card active">
-                    <div class="icon-box heart">💙</div>
-                    <div class="mode-text">
-                        <strong>Empathetic</strong>
-                        <p>Warm and validating</p>
-                    </div>
+    <div id="home-screen" class="screen">
+        <div class="landing-page">
+            <h1>ResilientCare</h1>
+            <p>Your compassionate AI companion.</p>
+            
+            <p id="current-date" style="color: gray; margin-bottom: 20px;"></p>
+
+            <div class="vent-container" onclick="navigateTo('vent-box-screen')">
+                <svg class="progress-ring" width="220" height="220">
+                    <circle class="progress-ring__circle" stroke="#4a90e2" stroke-width="8" fill="transparent" r="95" cx="110" cy="110"/>
+                </svg>
+                <div class="btn-vent">
+                    <b>Hold to Vent</b>
+                    <p>Let it all out</p>
                 </div>
+            </div> 
 
-                <div class="mode-card">
-                    <div class="icon-box lightning">⚡</div>
-                    <div class="mode-text">
-                        <strong>Direct</strong>
-                        <p>Action-oriented</p>
+            <div class="dropdown-wrapper">
+                <button class="dropdown-btn" onclick="toggleDropdown()">
+                    <h2>Select a Mode:</h2>
+                    <span class="arrow">▼</span>
+                </button>
+                <div id="modeDropdown" class="mode-menu">
+                    <div class="mode-card active" onclick="selectMode('Empathetic')">
+                        <div class="icon-box heart">💙</div>
+                        <div class="mode-text">
+                            <strong>Empathetic</strong>
+                            <p>Warm and validating </p>
+                        </div>
                     </div>
-                </div>
-
-                <div class="mode-card">
-                    <div class="icon-box scale">⚖️</div>
-                    <div class="mode-text">
-                        <strong>Balanced</strong>
-                        <p>Blend of both</p>
+                    <div class="mode-card" onclick="selectMode('Direct')">
+                        <div class="icon-box lightning">⚡</div>
+                        <div class="mode-text">
+                            <strong>Direct</strong>
+                            <p>Action-oriented </p>
+                        </div>
+                    </div>
+                    <div class="mode-card" onclick="selectMode('Balanced')">
+                        <div class="icon-box scale">⚖️</div>
+                        <div class="mode-text">
+                            <strong>Balanced</strong>
+                            <p>Blend of both </p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="action-row">
-            <a href="#Insights" class="btn-insights">View Insights</a>
-            <a href="#History" class="btn-history">View History</a>
-            <a href="#Settings" class="btn-settings">View Settings</a>
+            <nav class="action-row">
+                <button class="btn-insights">View Insights</button>
+                <button class="btn-history" >View History</button>
+                <button class="btn-settings"">View Settings</button>
+            </nav>
         </div>
     </div>
+
+    <div id="vent-box-screen" class="screen" style="display: none;">
+        <div class="vent-box-layout">
+            <nav class="vent-nav">
+            <button class="icon-btn" onclick="navigateTo('home-screen')">← Back</button>
+            <span class="nav-title"> Vent Box</span>
+            <button class="icon-btn">💾</button>
+            </nav>
+
+            <main class="vent-main">
+                <span class="hero-emoji">🌸</span>
+            <p>I'm here to listen. This is a safe place.</p>
+            <div class="input-area">
+            <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
+            <button class="send-fab" onclick="handleSend()">➤</button>
+            </div>
+            </main>
+        </div>
+    </div>
+
 </body>
 </html>

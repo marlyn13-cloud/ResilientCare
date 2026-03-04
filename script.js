@@ -49,11 +49,14 @@ updateDate();
             circle.style.strokeDashoffset = Math.max(0, currentOffset);
         }, 100);
 
+        // Inside your startHold function...
         holdTimer = setTimeout(() => {
-            clearInterval(progressInterval);
-            window.location.hash = "#VentBox";
-            alert("Vent Box Loaded!");
-        }, 1500); 
+        clearInterval(progressInterval);
+    
+        // This is the line that opens the new page!
+        window.location.href = "vent.html"; 
+    
+}, 1500); 
     }
 
     function cancelHold() {
@@ -68,3 +71,25 @@ updateDate();
     ventBtn.addEventListener('mouseleave', cancelHold);
     ventBtn.addEventListener('touchend', cancelHold);
 });
+
+//Load vent box screen
+function navigateTo(screenId) {
+    // Hide all screens
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(screen => {
+        screen.style.display = 'none';
+        document.getElementById(screenId).style.display = 'block';
+    });
+
+    const target = document.getElementById(screenId);
+    target.style.display = 'block';
+}
+
+// Placeholder for sending vent data
+function handleSend() {
+    const text = document.getElementById('vent-input').value;
+    if(text) {
+        alert("Analyzing your stressors...");
+        //link AI logic!
+    }
+}
