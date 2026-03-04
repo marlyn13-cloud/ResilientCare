@@ -84,6 +84,41 @@ function navigateTo(screenId) {
     const target = document.getElementById(screenId);
     target.style.display = 'block';
 }
+// 1. The Auto-Save Engine
+function autoSaveSession(role, text) {
+    // Grab existing history or start a new array
+    let history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
+    const now = new Date();
+    
+    // Push the new message with a timestamp
+    history.push({
+        role: role,
+        text: text,
+        time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: now.toLocaleDateString()
+    });
+    
+    // Save it back to the browser's memory
+    localStorage.setItem('resilientCareHistory', JSON.stringify(history));
+    
+    // 2. Trigger the Visual Indicator in the Header
+    const indicator = document.getElementById('save-indicator');
+    if(indicator) {
+        indicator.innerText = "Saving...";
+        indicator.style.color = "#C084FC"; // Flashes lavender while saving
+        
+        setTimeout(() => {
+            indicator.innerText = "Auto-saved ✓";
+            indicator.style.color = "#9CA3AF"; // Returns to gray
+        }, 1000);
+    }
+}
+function displayUserMessage(text) {
+    // ... your existing code to show the bubble ...
+    
+    // Trigger auto-save!
+    autoSaveSession('User', text); 
+}
 
 // Placeholder for sending vent data
 function handleSend() {

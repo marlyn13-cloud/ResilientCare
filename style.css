@@ -145,6 +145,14 @@ body {
 .icon-btn:active {
     transform: scale(0.9); /* Feedback when pressing */
 }
+.auto-save-text {
+    font-size: 13px;
+    color: #9CA3AF; /* Soft, non-distracting gray */
+    font-weight: 500;
+    font-style: italic;
+    transition: color 0.3s ease;
+}
+
 .vent-main{
     flex: 1;
     display: flex;
