@@ -5,5 +5,5 @@ In progress AI project
 - Implement view insights tab
 - Implement view history tab
 - Implement settings tab
-- Implement generative ai bot for vent tab use ash ai for inspiration
+- Implement generative ai bot for vent tab use ash ai for inspiration. Look into Rasa ai
 - Make sure auto-save feature works. It should save to the view insights page and generate a line connection graph to further determine any connections.
