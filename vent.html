@@ -8,70 +8,62 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    <div class="app">
+    
+    <div class="app-single-column">
         
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <button class="mobile-close-btn" onclick="toggleSidebar()">✕</button>
-                <div class="logo">ResilientCare<span>.</span></div>
-                <div class="tagline">Your college friction companion</div>
-            </div>
+        <nav class="vent-nav">
+            <button class="openbtn" onclick="toggleMenu()">☰</button>
+            <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
+            <span class="nav-title"> Vent Box</span>
+            <span id="save-indicator" class="auto-save-text">Auto-saved ✓</span>
+        </nav>
 
-            <div class="friction-categories">
-                <div class="cat-label">Quick starters</div>
-                
-                <button class="cat-btn active" onclick="sendChip('I got harsh feedback on my assignment and I feel crushed.')">
-                    <span class="cat-dot" style="background:#d4924a"></span>Harsh grading
-                </button>
-                <button class="cat-btn" onclick="sendChip('I\'m so confused by this assignment. I don\'t even know where to start.')">
-                    <span class="cat-dot" style="background:#4ab8a0"></span>Confusing material
-                </button>
-                <button class="cat-btn" onclick="sendChip('I\'m completely burned out. I don\'t know why I\'m even in this major.')">
-                    <span class="cat-dot" style="background:#7a7872"></span>Burnout &amp; doubt
-                </button>
-                <button class="cat-btn" onclick="sendChip('I feel like everyone else gets it and I\'m the only one lost.')">
-                    <span class="cat-dot" style="background:#8a6faf"></span>Imposter syndrome
-                </button>
-                <button class="cat-btn" onclick="sendChip('I have three deadlines this week and I\'m completely overwhelmed.')">
-                    <span class="cat-dot" style="background:#cc8855"></span>Deadline overload
-                </button>
-            </div>
-
-            <div class="sidebar-footer">
-                <div class="cat-label" style="margin-bottom:8px">How are you feeling?</div>
-                <div class="mood-strip">
-                    <button class="mood-btn" title="Frustrated">😤</button>
-                    <button class="mood-btn" title="Sad">😔</button>
-                    <button class="mood-btn" title="Anxious">😰</button>
-                    <button class="mood-btn" title="Okay">😐</button>
-                    <button class="mood-btn" title="Good">😊</button>
+        <div id="inline-menu" class="inline-menu-content">
+            <div class="dark-panel-inner">
+                <div class="friction-categories">
+                    <div class="cat-label" style="color: var(--text-dim);">Quick starters</div>
+                    
+                    <button class="cat-btn active" onclick="sendChip('I got harsh feedback on my assignment and I feel crushed.')">
+                        <span class="cat-dot" style="background:#d4924a"></span>Harsh grading
+                    </button>
+                    <button class="cat-btn" onclick="sendChip('I\'m so confused by this assignment. I don\'t even know where to start.')">
+                        <span class="cat-dot" style="background:#4ab8a0"></span>Confusing material
+                    </button>
+                    <button class="cat-btn" onclick="sendChip('I\'m completely burned out. I don\'t know why I\'m even in this major.')">
+                        <span class="cat-dot" style="background:#7a7872"></span>Burnout &amp; doubt
+                    </button>
+                    <button class="cat-btn" onclick="sendChip('I feel like everyone else gets it and I\'m the only one lost.')">
+                        <span class="cat-dot" style="background:#8a6faf"></span>Imposter syndrome
+                    </button>
+                    <button class="cat-btn" onclick="sendChip('I have three deadlines this week and I\'m completely overwhelmed.')">
+                        <span class="cat-dot" style="background:#cc8855"></span>Deadline overload
+                    </button>
                 </div>
-                
-                <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
-                    <span id="save-status" style="font-size: 12px; color: var(--text-muted);">Session active</span>
+
+                <div class="sidebar-footer">
+                    <div class="cat-label" style="margin-bottom:8px; color: var(--text-dim);">How are you feeling?</div>
+                    <div class="mood-strip">
+                        <button class="mood-btn" title="Frustrated">😤</button>
+                        <button class="mood-btn" title="Sad">😔</button>
+                        <button class="mood-btn" title="Anxious">😰</button>
+                        <button class="mood-btn" title="Okay">😐</button>
+                        <button class="mood-btn" title="Good">😊</button>
+                    </div>
                 </div>
-            </div>
-        </aside>
-
-        <div class="vent-box-layout">
-            <nav class="vent-nav">
-                <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
-                <span class="nav-title"> Vent Box</span>
-                <span id="save-indicator" class="auto-save-text">Auto-saved ✓</span>
-            </nav>
-
-            <main class="vent-main">
-                <span class="hero-emoji">:)</span>
-                <h2>Welcome to your safe space</h2>
-                <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Select a quick starter from the menu or type what's on your mind.</p>
-                </main>
-
-            <div class="input-area">
-                <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
-                <button class="send-fab" onclick="handleSend()">➤</button>
             </div>
         </div>
-        
+
+        <main class="vent-main">
+            <span class="hero-emoji">:)</span>
+            <h2>Welcome to your safe space</h2>
+            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick starter or type what's on your mind.</p>
+        </main>
+
+        <div class="input-area">
+            <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
+            <button class="send-fab" onclick="handleSend()">➤</button>
+        </div>
+
     </div>
 </body>
 </html>

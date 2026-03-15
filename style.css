@@ -1,3 +1,4 @@
+
 * {
     margin: 0;
     padding: 0;
@@ -50,18 +51,64 @@ html, body {
         display: block; 
     }
 }
-/* ── Sidebar ── */
-.sidebar {
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  width: 100%;
-  max-height: 200;
-  height: auto;
-  transition: transform 0.3s ease;
+/* =========================================
+   SINGLE COLUMN & INLINE MENU (Mobile First)
+   ========================================= */
+
+.app-single-column {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background: var(--bg); /* Uses your dark background variable */
+}
+
+/* The Collapsible Menu Container */
+.inline-menu-content {
+    max-height: 0;
+    overflow: hidden;
+    background-color: var(--surface); /* Ash-AI Dark Panel */
+    transition: max-height 0.4s ease-in-out;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* When Javascript adds this class, it slides open! */
+.inline-menu-content.expanded {
+    max-height: 500px; /* Big enough to fit your buttons */
+    overflow-y: auto;
+}
+
+.dark-panel-inner {
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Tweaks to make your buttons look perfect inside the new menu */
+.vent-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.openbtn {
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    color: var(--text);
+    border: none;
+    padding-right: 15px;
+    transition: transform 0.2s;
+}
+
+.openbtn.rotated {
+    transform: rotate(90deg); /* Spins the hamburger when open */
 }
  
 .sidebar-header {
@@ -251,14 +298,7 @@ body {
     stroke-linecap: round;
 }
 
-/* Loading vent box tab */
-.app {
-    display: grid;
-    grid-template-columns: 260px 1fr; /* 260px Sidebar, 1fr Chat */
-    height: 100vh;
-    overflow: hidden;
-    width: 100vw;
-}
+
 .vent-trigger {
     background: radial-gradient(circle, #E0E7FF 0%, #EEF2FF 100%);
     border-radius: 50%;
@@ -702,4 +742,66 @@ textarea::placeholder {
 
 .btn-insights:hover, .btn-history:hover, .btn-settings:hover {
     background-color: #f0f0f0;
+}
+/* =========================================
+   ACCORDION MENU (Quick Starters)
+   ========================================= */
+
+/* Make the label a clickable button */
+.collapsible {
+    cursor: pointer;
+    width: 100%;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    outline: none;
+    transition: color 0.2s ease;
+}
+
+.collapsible:hover {
+    color: var(--text); /* Brightens on hover */
+}
+
+/* The arrow animation */
+.collapsible .arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+/* Rotates the arrow pointing up when the menu is closed */
+.collapsible.active-collapse .arrow {
+    transform: rotate(-90deg);
+}
+
+/* The sliding container */
+.collapsible-content {
+    padding: 0;
+    max-height: 500px; /* Starts open */
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+}
+
+/* Matches your screenshot's clean, transparent buttons */
+.cat-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    text-align: left;
+    transition: background 0.2s, color 0.2s;
+    border-radius: var(--radius-sm);
+}
+
+.cat-btn:hover { 
+    background: var(--surface-2); 
+    color: var(--text); 
 }

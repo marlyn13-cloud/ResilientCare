@@ -71,13 +71,10 @@ const EmotionAI = new EmotionModel();
 class ResilientCareEngine {
     constructor(){
         this.memory = []; 
-        
-        // The Ash-AI Persona: Tailored for College Student Friction
-        // NOW USING AUTOMATIC MODE DETECTION
         this.intents = [
             {
                 category: "Harsh Grading",
-                autoMode: "Direct", // Auto-routes to Direct
+                autoMode: "Direct", 
                 keywords: ["failed", "grade", "rubric", "points docked", "harsh", "feedback", "unfair"],
                 responses: {
                     Direct: "That was a high-friction moment, but we can reset.\n1. Spend 2 minutes breathing to drop your heart rate.\n2. Isolate the exact technical critique and ignore the tone.\n3. Draft a short, neutral email to the TA for clarification."
@@ -85,7 +82,7 @@ class ResilientCareEngine {
             },
             {
                 category: "Confusing Material",
-                autoMode: "Balanced", // Auto-routes to Balanced
+                autoMode: "Balanced", 
                 keywords: ["confused", "lost", "stuck", "instructions", "assignment", "don't understand"],
                 responses: {
                     Balanced: "You aren't lazy; you're just overwhelmed by the input. Set a timer for 10 minutes. Don't try to solve the whole assignment—just map out the very first step. Then take a break."
@@ -93,7 +90,7 @@ class ResilientCareEngine {
             },
             {
                 category: "Burnout & Identity",
-                autoMode: "Empathetic", // Auto-routes to Empathetic
+                autoMode: "Empathetic",
                 keywords: ["quit", "burnout", "major", "not cut out", "tired", "hopeless", "pointless", "dropping"],
                 responses: {
                     Empathetic: "Pouring your life into this major and feeling like you're hitting a wall is deeply discouraging. You've been under immense pressure. Just let yourself rest right now."
@@ -101,7 +98,6 @@ class ResilientCareEngine {
             }
         ];
 
-        // Fallbacks if no specific keywords are detected
         this.fallbackResponses = {
             Balanced: "This sounds incredibly draining, and your frustration makes total sense. Let's step away from the screen for 15 minutes, then look at just one small piece of the problem."
         };
@@ -137,7 +133,6 @@ class ResilientCareEngine {
     }
 
     async generateResponse(userInput){
-        // 1. Run Sentiment Analysis (The Distressed Override)
         const emotion = await detectEmotion(userInput);
 
         if(emotion === "distressed"){
@@ -147,7 +142,6 @@ class ResilientCareEngine {
             };
         }
 
-        // 2. Keyword & Intent Analysis (Auto-Detect Mode)
         const analysis = this.analyzeIntent(userInput);
 
         if (analysis.intent && analysis.score > 0) {
@@ -158,7 +152,6 @@ class ResilientCareEngine {
             };
         }
 
-        // 3. Fallback
         return { 
             text: this.fallbackResponses["Balanced"],
             detectedMode: "Balanced" 
@@ -172,75 +165,71 @@ const AI = new ResilientCareEngine();
 // 3. UI, NAVIGATION, AND SIDEBAR LOGIC
 // ==========================================
 
-function toggleSidebar() {
+// ==========================================
+// 3. UI, NAVIGATION, AND MENU LOGIC
+// ==========================================
 
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const app = document.querySelector('.app');
-
-  if (!sidebar) return;
-
-  if (window.innerWidth <= 640) {
-    sidebar.classList.toggle('show-sidebar');
-
-    if (overlay) {
-      overlay.classList.toggle('show-overlay');
+window.toggleMenu = function() {
+    const menu = document.getElementById("inline-menu");
+    const btn = document.querySelector(".openbtn");
+    
+    if (menu) {
+        menu.classList.toggle("expanded");
+        if(btn) btn.classList.toggle("rotated"); // Spins the hamburger icon
     }
+}
 
-  } else {
-    if (app) {
-      app.classList.toggle('sidebar-closed');
+// Drops starter text into the chat box and auto-closes the menu
+window.sendChip = function(text) {
+    const inputElement = document.getElementById('vent-input');
+    if (inputElement) {
+        inputElement.value = text;
+        inputElement.focus(); 
     }
-  }
-}
-function injectChip(text) {
-  const inp = document.getElementById('user-input');
-  inp.value = text;
-  updateChar();
-  autoResize(inp);
- 
-  if (window.innerWidth <= 640) {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    if (sidebar) sidebar.classList.remove('show-sidebar');
-    if (overlay) overlay.classList.remove('show-overlay');
-  }
- 
-  sendMessage();
-}
-function sendChip(el, text) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  injectChip(text);
-}
-// -------------------------------------
-
-function toggleDropdown() {
-    const menu = document.getElementById("modeDropdown");
-    if(menu) menu.classList.toggle("show");
+    
+    // Auto-close the menu so the user can see the chat
+    const menu = document.getElementById("inline-menu");
+    const btn = document.querySelector(".openbtn");
+    if (menu && menu.classList.contains("expanded")) {
+        menu.classList.remove("expanded");
+        if(btn) btn.classList.remove("rotated");
+    }
 }
 
-function selectMode(element, mode) {
-    const cards = document.querySelectorAll(".mode-card");
-    cards.forEach(c => c.classList.remove("active"));
-    element.classList.add("active");
-    localStorage.setItem('resilientCareMode', mode);
+function navigateTo(screenId) {
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(screen => screen.style.display = 'none');
+    const target = document.getElementById(screenId);
+    if(target) target.style.display = 'block';
 }
 
+// ── INITIALIZATION (Event Listeners) ──
 document.addEventListener("DOMContentLoaded", () => {
-    if (!localStorage.getItem('resilientCareMode')) {
-        localStorage.setItem('resilientCareMode', 'Empathetic');
-    }
-
-    function updateDate() {
-        const now = new Date();
+    
+    // 1. Setup Date on Home Screen
+    const dateEl = document.getElementById('current-date');
+    if(dateEl) {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const dateEl = document.getElementById('current-date');
-        if(dateEl) dateEl.innerText = now.toLocaleDateString('en-US', options);
+        dateEl.innerText = new Date().toLocaleDateString('en-US', options);
     }
-    updateDate();
 
-    // Vent Button Hold Logic
+    // 2. Setup Collapsible Menus in Sidebar
+    const collapsibles = document.getElementsByClassName("collapsible");
+    for (let i = 0; i < collapsibles.length; i++) {
+        collapsibles[i].addEventListener("click", function() {
+            this.classList.toggle("active-collapse");
+            let content = this.nextElementSibling;
+            if (content.style.maxHeight && content.style.maxHeight !== "0px") {
+                content.style.maxHeight = "0px";
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        });
+        
+    }
+    
+
+    // 3. Vent Button Hold Logic
     const circle = document.querySelector('.progress-ring__circle');
     const ventBtn = document.querySelector('.btn-vent');
     
@@ -278,13 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-function navigateTo(screenId) {
-    const screens = document.querySelectorAll('.screen');
-    screens.forEach(screen => screen.style.display = 'none');
-    const target = document.getElementById(screenId);
-    if(target) target.style.display = 'block';
-}
-
 // ==========================================
 // 4. VENT BOX CHAT & AUTO-SAVE LOGIC
 // ==========================================
@@ -320,7 +302,7 @@ function scrollToBottom() {
 }
 
 // Handle sending the message
-function handleSend() {
+window.handleSend = function() {
     const inputElement = document.getElementById('vent-input');
     const userText = inputElement.value.trim();
 
@@ -331,29 +313,19 @@ function handleSend() {
     displayUserMessage(userText);
     showTypingIndicator();
 
-    // Store the user's message in the AI's short-term memory
     AI.remember("user", userText);
 
     setTimeout(() => {
         removeTypingIndicator();
 
-        // The AI now automatically determines the best mode based on what you type!
         AI.generateResponse(userText).then(aiResponse => {
             displayChatMessage(aiResponse.text);
             AI.remember("ai", aiResponse.text); 
-            
-            // Helpful log for debugging your auto-routing
             console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
         });
 
     }, 1500);
-
-    // Close sidebar automatically on mobile if it is open
-    const sidebar = document.getElementById('mobile-sidebar');
-    if (sidebar && sidebar.classList.contains('show-sidebar')) {
-        toggleSidebar(); 
-    }
-} // <-- FIXED: Removed the extra trailing bracket that was here!
+}
 
 function displayUserMessage(text) {
     const mainContent = document.querySelector('.vent-main');
