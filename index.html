@@ -6,6 +6,7 @@
     <title>ResilientCare.ai</title>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js"></script>
 </head>
 <body>
 
@@ -23,36 +24,6 @@
                 <div class="btn-vent">
                     <b>Hold to Vent</b>
                     <p>Let it all out</p>
-                </div>
-            </div> 
-
-            <div class="dropdown-wrapper">
-                <button class="dropdown-btn" onclick="toggleDropdown()">
-                    <h2>Mode Selection Details:</h2>
-                    <span class="arrow">▼</span>
-                </button>
-                <div id="modeDropdown" class="mode-menu">
-                    <div class="mode-card active" onclick="selectMode('Empathetic')">
-                        <div class="icon-box heart">💙</div>
-                        <div class="mode-text">
-                            <strong>Empathetic</strong>
-                            <p>Warm and validating </p>
-                        </div>
-                    </div>
-                    <div class="mode-card" onclick="selectMode('Direct')">
-                        <div class="icon-box lightning">⚡</div>
-                        <div class="mode-text">
-                            <strong>Direct</strong>
-                            <p>Action-oriented </p>
-                        </div>
-                    </div>
-                    <div class="mode-card" onclick="selectMode('Balanced')">
-                        <div class="icon-box scale">⚖️</div>
-                        <div class="mode-text">
-                            <strong>Balanced</strong>
-                            <p>Blend of both </p>
-                        </div>
-                    </div>
                 </div>
             </div>
 

@@ -1,105 +1,542 @@
-// 1. AI NLP ENGINE (The Brain)
-class ResilientCareEngine {
+// ==========================================
+// 1. AI SENTIMENT MODEL (Browser version)
+// ==========================================
+let sentimentModel = null;
+
+async function loadAIModel() {
+    if (!window.transformers) {
+        console.warn("Transformers.js not loaded. Make sure the CDN is in your HTML.");
+        return;
+    }
+    sentimentModel = await window.transformers.pipeline(
+        "sentiment-analysis",
+        "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
+    );
+    console.log("AI Model Loaded");
+}
+
+loadAIModel();
+
+async function detectEmotion(text){
+    if(!sentimentModel){
+        return "neutral";
+    }
+    const result = await sentimentModel(text);
+    if(result && result[0] && result[0].label === "NEGATIVE"){
+        return "distressed";
+    }
+    return "neutral";
+}
+
+// ==========================================
+// 2. EMOTION & INTENT ENGINES
+// ==========================================
+class EmotionModel {
     constructor() {
+        this.emotions = {
+            stress: ["overwhelmed","burnout","too much","pressure","breaking"],
+            confusion: ["lost","confused","don't understand","stuck"],
+            frustration: ["unfair","failed","angry","annoyed","points docked"],
+            sadness: ["tired","hopeless","sad","exhausted","pointless"]
+        }
+    }
+
+    detectEmotion(text){
+        const lower = text.toLowerCase();
+        let scores = { stress:0, confusion:0, frustration:0, sadness:0 };
+
+        for(const emotion in this.emotions){
+            this.emotions[emotion].forEach(word=>{
+                if(lower.includes(word)){
+                    scores[emotion]++;
+                }
+            });
+        }
+
+        let highest = "neutral";
+        let bestScore = 0;
+
+        for(const e in scores){
+            if(scores[e] > bestScore){
+                highest = e;
+                bestScore = scores[e];
+            }
+        }
+        return highest;
+    }
+}
+
+const EmotionAI = new EmotionModel();
+
+class ResilientCareEngine {
+    constructor(){
+        this.memory = []; 
+        
+        // The Ash-AI Persona: Tailored for College Student Friction
+        // NOW USING AUTOMATIC MODE DETECTION
         this.intents = [
             {
-                context: "Harsh Grading",
-                defaultMode: "Direct",
-                keywords: ["failed", "points docked", "unfair", "rubric", "grader", "feedback", "harsh", "grade"],
-                responses: [
-                    "That was a high-friction moment, but we can reset. Here are three steps to handle this and move forward:\n\n1. Physical Reset: Spend 5 minutes doing boxed breathing (inhale 4s, hold 4s, exhale 4s) to stop the shaky feeling.\n2. Isolate the Critique: Write down the one specific technical thing to fix. Ignore the tone; just keep the data.\n3. Micro-Transition: Drink some water and walk away for a few minutes to mentally close the door on the previous hour."
-                ]
+                category: "Harsh Grading",
+                autoMode: "Direct", // Auto-routes to Direct
+                keywords: ["failed", "grade", "rubric", "points docked", "harsh", "feedback", "unfair"],
+                responses: {
+                    Direct: "That was a high-friction moment, but we can reset.\n1. Spend 2 minutes breathing to drop your heart rate.\n2. Isolate the exact technical critique and ignore the tone.\n3. Draft a short, neutral email to the TA for clarification."
+                }
             },
             {
-                context: "Confusing Material",
-                defaultMode: "Balanced",
-                keywords: ["don't understand", "lost", "staring at screen", "stuck", "assignments", "instructions", "nothing is happening"],
-                responses: [
-                    "It sounds like you're experiencing a total system overload—that distant feeling is usually your brain trying to protect itself from too much input. It’s okay to want quiet right now. Let’s try a low-input approach:\n\n• The Validation: You aren't lazy; you're overwhelmed by daily friction. It happens to the best students.\n• The Action: Set a timer for just 10 minutes. Don't try to do the assignment; just highlight the sentences in the instructions that are confusing so you can ask about them later.\n• Final Solution: After those 10 minutes, ignore your phone for an hour and do something low energy like listening to a familiar playlist to reset."
-                ]
+                category: "Confusing Material",
+                autoMode: "Balanced", // Auto-routes to Balanced
+                keywords: ["confused", "lost", "stuck", "instructions", "assignment", "don't understand"],
+                responses: {
+                    Balanced: "You aren't lazy; you're just overwhelmed by the input. Set a timer for 10 minutes. Don't try to solve the whole assignment—just map out the very first step. Then take a break."
+                }
             },
             {
-                context: "High Stress Crisis",
-                defaultMode: "Empathetic",
-                keywords: ["changing major", "not cut out", "burnout", "distant", "don't want to talk", "shaky", "overwhelmed", "breaking point", "quit"],
-                responses: [
-                    "I hear how heavy this feels. Pouring your life into something and not seeing it reflected is exhausting and discouraging. It's completely valid to feel like you're at a breaking point right now.\n\nBefore you make any big decisions, just let yourself be frustrated for a moment. You’ve been under a lot of pressure; it makes sense that your system is feeling overwhelmed."
-                ]
+                category: "Burnout & Identity",
+                autoMode: "Empathetic", // Auto-routes to Empathetic
+                keywords: ["quit", "burnout", "major", "not cut out", "tired", "hopeless", "pointless", "dropping"],
+                responses: {
+                    Empathetic: "Pouring your life into this major and feeling like you're hitting a wall is deeply discouraging. You've been under immense pressure. Just let yourself rest right now."
+                }
             }
         ];
 
+        // Fallbacks if no specific keywords are detected
         this.fallbackResponses = {
-            Empathetic: "I'm hearing that things feel really heavy right now. You don't have to fix everything in this exact minute. Just breathe. I'm here.",
-            Direct: "Let's break this down. What is the single smallest step you can take right now to clear the friction?",
             Balanced: "This sounds incredibly draining, and your frustration makes total sense. Let's step away from the screen for 15 minutes, then look at just one small piece of the problem."
         };
     }
 
-    tokenize(text) {
-        return text.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").split(/\s+/);
-    }
-
-    analyzeIntent(text) {
-        const tokens = this.tokenize(text);
-        const inputString = text.toLowerCase();
+    analyzeIntent(text){
+        const lower = text.toLowerCase();
         let bestMatch = null;
         let highestScore = 0;
 
         this.intents.forEach(intent => {
             let score = 0;
-            intent.keywords.forEach(keyword => {
-                if (inputString.includes(keyword)) {
-                    score += 2; 
-                } else {
-                    keyword.split(" ").forEach(kw => {
-                        if (tokens.includes(kw)) score += 1;
-                    });
+            intent.keywords.forEach(word=>{
+                if(lower.includes(word)){
+                    score++;
                 }
             });
-            if (score > highestScore) {
+
+            if(score > highestScore){
                 highestScore = score;
                 bestMatch = intent;
             }
         });
+
         return { intent: bestMatch, score: highestScore };
     }
 
-    generateResponse(userInput, selectedUIMode = null) {
-        const analysis = this.analyzeIntent(userInput);
-        if (analysis.intent && analysis.score > 0) {
-            const responses = analysis.intent.responses;
-            return { text: responses[Math.floor(Math.random() * responses.length)] };
+    remember(role, text){
+        this.memory.push({role, text});
+        if(this.memory.length > 10){
+            this.memory.shift(); 
         }
-        const fallbackMode = selectedUIMode || "Empathetic";
-        return { text: this.fallbackResponses[fallbackMode] };
+    }
+
+    async generateResponse(userInput){
+        // 1. Run Sentiment Analysis (The Distressed Override)
+        const emotion = await detectEmotion(userInput);
+
+        if(emotion === "distressed"){
+            return {
+                text: "That sounds really overwhelming. When everything piles up like this, the brain goes into protection mode. Let's slow things down together. What's the smallest thing on your plate right now?",
+                detectedMode: "Empathetic"
+            };
+        }
+
+        // 2. Keyword & Intent Analysis (Auto-Detect Mode)
+        const analysis = this.analyzeIntent(userInput);
+
+        if (analysis.intent && analysis.score > 0) {
+            const autoSelectedMode = analysis.intent.autoMode;
+            return {
+                text: analysis.intent.responses[autoSelectedMode],
+                detectedMode: autoSelectedMode
+            };
+        }
+
+        // 3. Fallback
+        return { 
+            text: this.fallbackResponses["Balanced"],
+            detectedMode: "Balanced" 
+        };
     }
 }
+
 const AI = new ResilientCareEngine();
 
-// Dropdown toggle function
-function toggleDropdown() {
-    const menu = document.getElementById("modeDropdown");
-    menu.classList.toggle("show");
+// ==========================================
+// 3. UI AND NAVIGATION LOGIC
+// ==========================================
+// ==========================================
+// ASH AI — app.js
+// College friction companion powered by Claude
+// ==========================================
+
+// ── System Prompt ──
+const SYSTEM_PROMPT = `You are Ash, a warm, emotionally intelligent AI companion built specifically for college students navigating daily academic friction.
+
+Your role:
+- Listen first. Acknowledge feelings before jumping to solutions.
+- Be genuine and conversational — never robotic or clinical.
+- Help students process stress, confusion, burnout, imposter syndrome, harsh grading, deadline overload, financial stress, and social friction.
+- When appropriate, offer one or two small, actionable steps — but never overwhelm.
+- You are NOT a crisis counselor. If someone expresses serious self-harm or crisis, gently direct them to campus mental health or 988 (Suicide & Crisis Lifeline) while staying warm.
+
+Detect and respond to these friction types:
+1. Harsh Grading → Validate the sting, help separate emotional reaction from technical critique, offer a simple next step (e.g., draft a calm email to the TA).
+2. Burnout & Major Doubt → Deep empathy first. Remind them rest is not failure. Avoid toxic positivity. Offer one tiny recovery action.
+3. Confusing Material → Normalize confusion. Help them break the problem into the smallest possible first step.
+4. Imposter Syndrome → Challenge the "everyone else gets it" narrative with gentle reality checks. Share the statistical normalcy of feeling this way.
+5. Deadline Overload → Help triage: what is actually due first? What can be simplified? What can be dropped?
+6. Financial Stress → Acknowledge the very real weight this adds. Point toward campus resources (financial aid office, emergency funds) without dismissing the emotional impact.
+7. Failed Exam → Validate. Separate identity from outcome. Look at what can be changed vs. accepted.
+8. Social / Roommate Friction → Validate without taking sides. Help them articulate what they actually need.
+
+Tone rules:
+- Warm, real, slightly casual — like a wise older friend who has been through it.
+- Concise responses (3–6 sentences for empathy, then 1–3 action steps if relevant).
+- No corporate cheerleading. No "Great question!" or "Absolutely!".
+- No bullet lists unless listing steps — use natural prose otherwise.
+- Format bold key phrases using **bold** markdown for emphasis sparingly.
+- End each response by either asking a gentle follow-up question OR offering a small next step — never just trailing off.
+
+After your response, on a NEW LINE (completely separate), output a JSON object ONLY like this:
+{"mode":"Empathetic","category":"Burnout"}
+
+Valid modes: Empathetic, Direct, Grounded, Crisis
+Valid categories: Grading, Burnout, Confusion, Imposter, Deadlines, Financial, Exam, Social, General`;
+
+// ── State ──
+let conversationHistory = JSON.parse(localStorage.getItem('ash_history') || '[]');
+let selectedMood = null;
+let isTyping = false;
+
+// ==========================================
+// UI HELPERS
+// ==========================================
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-// Select a Mode and Save it to Memory
+function updateChar() {
+  const inp = document.getElementById('user-input');
+  document.getElementById('char-count').textContent = inp.value.length + ' / 1000';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function setMood(el, emoji) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedMood = emoji;
+  const labels = {
+    '😤': 'Frustrated',
+    '😔': 'Feeling down',
+    '😰': 'Anxious',
+    '😐': 'Hanging in there',
+    '😊': 'Doing okay'
+  };
+  document.getElementById('mood-label').textContent = labels[emoji] || '';
+}
+
+function setModeBadge(mode) {
+  const badge = document.getElementById('mode-badge');
+  const map = {
+    Empathetic: 'mode-empathetic',
+    Direct: 'mode-direct',
+    Grounded: 'mode-grounded',
+    Crisis: 'mode-crisis'
+  };
+  badge.className = 'mode-badge ' + (map[mode] || '');
+  badge.textContent = mode || 'Listening';
+}
+
+function scrollToBottom() {
+  const w = document.getElementById('chat-window');
+  w.scrollTop = w.scrollHeight;
+}
+
+// ==========================================
+// SESSION PERSISTENCE
+// ==========================================
+
+function saveSession() {
+  localStorage.setItem('ash_history', JSON.stringify(conversationHistory));
+  const s = document.getElementById('save-status');
+  s.textContent = 'Saved ✓';
+  setTimeout(() => { s.textContent = 'Auto-saved ✓'; }, 1200);
+}
+
+function clearHistory() {
+  if (!confirm('Clear conversation history?')) return;
+  conversationHistory = [];
+  localStorage.removeItem('ash_history');
+  const w = document.getElementById('chat-window');
+  w.innerHTML = '';
+  showEmptyState();
+  setModeBadge('');
+}
+
+// ==========================================
+// EMPTY STATE
+// ==========================================
+
+function showEmptyState() {
+  const w = document.getElementById('chat-window');
+  const es = document.createElement('div');
+  es.className = 'empty-state';
+  es.id = 'empty-state';
+  es.innerHTML = `
+    <div class="empty-logo">Ash<span>.</span></div>
+    <p class="empty-sub">College is hard. Grades, deadlines, burnout, imposter syndrome — I'm here to help you process it all and find a path forward.</p>
+    <div class="prompt-chips">
+      <span class="chip" onclick="injectChip('I just got a really harsh grade and I feel devastated.')">Harsh grade ↗</span>
+      <span class="chip" onclick="injectChip('I\'m burned out and questioning my major.')">Burnout ↗</span>
+      <span class="chip" onclick="injectChip('I have too many deadlines and I don\'t know where to start.')">Deadline panic ↗</span>
+      <span class="chip" onclick="injectChip('I feel like everyone gets it except me.')">Imposter syndrome ↗</span>
+    </div>`;
+  w.appendChild(es);
+}
+
+function removeEmptyState() {
+  const es = document.getElementById('empty-state');
+  if (es) es.remove();
+}
+
+// ==========================================
+// MESSAGE RENDERING
+// ==========================================
+
+/**
+ * Renders a message bubble into the chat window.
+ * @param {string} role - 'user' or 'ash'
+ * @param {string} text - Message content (supports **bold** markdown)
+ * @param {object} meta - { mode, category } from Ash's JSON tag
+ */
+function renderMessage(role, text, meta = {}) {
+  removeEmptyState();
+  const w = document.getElementById('chat-window');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg ' + role;
+
+  // Detection tag above Ash bubbles
+  if (role === 'ash' && meta.mode) {
+    const tag = document.createElement('div');
+    tag.className = 'detect-tag ' + meta.mode.toLowerCase();
+    const icons = { Empathetic: '♡', Direct: '→', Grounded: '◎', Crisis: '!' };
+    tag.textContent =
+      (icons[meta.mode] || '·') + ' ' + meta.mode +
+      (meta.category ? ' · ' + meta.category : '');
+    wrapper.appendChild(tag);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = formatText(text);
+  wrapper.appendChild(bubble);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'msg-meta';
+  metaEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  wrapper.appendChild(metaEl);
+
+  w.appendChild(wrapper);
+  scrollToBottom();
+}
+
+/**
+ * Converts **bold** markdown and newlines into HTML.
+ */
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+}
+
+function showTyping() {
+  removeTyping();
+  const w = document.getElementById('chat-window');
+  const el = document.createElement('div');
+  el.className = 'msg ash';
+  el.id = 'typing-msg';
+  const b = document.createElement('div');
+  b.className = 'bubble typing-bubble';
+  b.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+  el.appendChild(b);
+  w.appendChild(el);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-msg');
+  if (t) t.remove();
+}
+
+// ==========================================
+// CHIP / QUICK STARTERS
+// ==========================================
+
+/**
+ * Populates the input with a preset text and fires sendMessage.
+ */
+function injectChip(text) {
+  const inp = document.getElementById('user-input');
+  inp.value = text;
+  updateChar();
+  autoResize(inp);
+  sendMessage();
+}
+
+/**
+ * Sidebar category button handler — marks it active then fires the chip.
+ */
+function sendChip(el, text) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  injectChip(text);
+}
+
+// ==========================================
+// CORE SEND → CLAUDE API
+// ==========================================
+
+async function sendMessage() {
+  if (isTyping) return;
+
+  const inp = document.getElementById('user-input');
+  const text = inp.value.trim();
+  if (!text) return;
+
+  inp.value = '';
+  inp.style.height = 'auto';
+  updateChar();
+  isTyping = true;
+  document.getElementById('send-btn').disabled = true;
+
+  // Prepend mood tag if the user set one
+  const fullText = selectedMood ? `[Mood: ${selectedMood}] ${text}` : text;
+
+  renderMessage('user', text);
+  conversationHistory.push({ role: 'user', content: fullText });
+
+  showTyping();
+
+  try {
+    const messages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages
+      })
+    });
+
+    if (!res.ok) throw new Error('API error ' + res.status);
+
+    const data = await res.json();
+    const raw = data.content.map(c => c.text || '').join('');
+
+    // Extract the JSON metadata Ash appends at the end
+    const jsonMatch = raw.match(/\{[\s\S]*?"mode"[\s\S]*?\}/);
+    let meta = {};
+    let cleanText = raw;
+
+    if (jsonMatch) {
+      try {
+        meta = JSON.parse(jsonMatch[0]);
+        cleanText = raw.replace(jsonMatch[0], '').trim();
+      } catch (e) {
+        // JSON parse failed — keep raw text as-is
+      }
+    }
+
+    removeTyping();
+    renderMessage('ash', cleanText, meta);
+    conversationHistory.push({ role: 'assistant', content: raw });
+
+    if (meta.mode) setModeBadge(meta.mode);
+    saveSession();
+
+  } catch (err) {
+    removeTyping();
+    renderMessage('ash',
+      "I'm having trouble connecting right now. Try refreshing, or just know — whatever you're going through, it's valid and it can get better.",
+      { mode: 'Grounded', category: 'General' }
+    );
+    console.error('Ash API error:', err);
+  }
+
+  isTyping = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('user-input').focus();
+}
+
+// ==========================================
+// INIT — restore previous session
+// ==========================================
+
+(function init() {
+  if (conversationHistory.length === 0) return;
+
+  removeEmptyState();
+
+  conversationHistory.forEach(m => {
+    if (m.role === 'user') {
+      // Strip the mood tag before displaying
+      renderMessage('user', m.content.replace(/^\[Mood: .+?\] /, ''));
+    } else if (m.role === 'assistant') {
+      const jsonMatch = m.content.match(/\{[\s\S]*?"mode"[\s\S]*?\}/);
+      let meta = {};
+      let cleanText = m.content;
+      if (jsonMatch) {
+        try {
+          meta = JSON.parse(jsonMatch[0]);
+          cleanText = m.content.replace(jsonMatch[0], '').trim();
+        } catch (e) {}
+      }
+      renderMessage('resilientCare', cleanText, meta);
+    }
+  });
+
+  scrollToBottom();
+})();
+
+function toggleDropdown() {
+    const menu = document.getElementById("modeDropdown");
+    if(menu) menu.classList.toggle("show");
+}
+
 function selectMode(element, mode) {
     const cards = document.querySelectorAll(".mode-card");
     cards.forEach(c => c.classList.remove("active"));
     element.classList.add("active");
-    
-    // Save to browser memory so the AI knows what to do!
+    // Saving to localStorage just in case you use it for UI later, but the AI ignores this now
     localStorage.setItem('resilientCareMode', mode);
 }
 
-// Initialize Page Data
 document.addEventListener("DOMContentLoaded", () => {
-    // Set default mode if empty
     if (!localStorage.getItem('resilientCareMode')) {
         localStorage.setItem('resilientCareMode', 'Empathetic');
     }
 
-    // Auto-updating Date
     function updateDate() {
         const now = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -108,9 +545,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     updateDate();
 
-    // Hold-to-Vent Logic
+    // Vent Button Hold Logic
     const circle = document.querySelector('.progress-ring__circle');
     const ventBtn = document.querySelector('.btn-vent');
+    
     if(circle && ventBtn) {
         const circumference = 597;
         let progressInterval;
@@ -151,9 +589,11 @@ function navigateTo(screenId) {
     const target = document.getElementById(screenId);
     if(target) target.style.display = 'block';
 }
-// 3. VENT BOX CHAT & AUTO-SAVE LOGIC
 
-// Auto-Save
+// ==========================================
+// 4. VENT BOX CHAT & AUTO-SAVE LOGIC
+// ==========================================
+
 function autoSaveSession(role, text) {
     let history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
     const now = new Date();
@@ -179,33 +619,56 @@ function autoSaveSession(role, text) {
     }
 }
 
+function scrollToBottom() {
+    const chatContainer = document.querySelector('.vent-main');
+    if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 // Handle sending the message
 function handleSend() {
     const inputElement = document.getElementById('vent-input');
     const userText = inputElement.value.trim();
+
     if (!userText) return;
 
-    inputElement.value = ''; 
-    displayUserMessage(userText); 
-    showTypingIndicator(); // Show AI thinking
+    inputElement.value = '';
+    
+    displayUserMessage(userText);
+    showTypingIndicator();
 
-    // Simulate AI processing time
+    // Store the user's message in the AI's short-term memory
+    AI.remember("user", userText);
+
     setTimeout(() => {
         removeTypingIndicator();
-        const savedMode = localStorage.getItem('resilientCareMode') || 'Balanced';
-        const aiResponse = AI.generateResponse(userText, savedMode); 
-        displayChatMessage(aiResponse.text);
-    }, 2000);
+
+        // The AI now automatically determines the best mode based on what you type!
+        AI.generateResponse(userText).then(aiResponse => {
+            displayChatMessage(aiResponse.text);
+            AI.remember("ai", aiResponse.text); 
+            
+            // Helpful log for debugging your auto-routing
+            console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
+        });
+
+    }, 1500);
+    window.sendChip = function(text) {
+    const inputElement = document.getElementById('vent-input');
+    if (inputElement) {
+        inputElement.value = text;
+        inputElement.focus(); // Highlights the text box so they can just press send!
+    }
+}
 }
 
-// Render User Message
 function displayUserMessage(text) {
     const mainContent = document.querySelector('.vent-main');
     const messageDiv = document.createElement('div');
     messageDiv.className = 'user-message-bubble';
     messageDiv.innerText = text;
     mainContent.appendChild(messageDiv);
-    window.scrollTo(0, document.body.scrollHeight);
+    
+    scrollToBottom();
     autoSaveSession('User', text); 
 }
 
@@ -215,11 +678,11 @@ function displayChatMessage(messageText) {
     messageDiv.className = 'ai-message-bubble';
     messageDiv.innerHTML = messageText.replace(/\n/g, '<br>');
     mainContent.appendChild(messageDiv);
-    window.scrollTo(0, document.body.scrollHeight);
+    
+    scrollToBottom();
     autoSaveSession('ResilientCare AI', messageText); 
 }
 
-// Typing Indicators
 function showTypingIndicator() {
     const mainContent = document.querySelector('.vent-main');
     const typingDiv = document.createElement('div');
@@ -227,38 +690,10 @@ function showTypingIndicator() {
     typingDiv.className = 'ai-message-bubble typing-bubble';
     typingDiv.innerHTML = '<span></span><span></span><span></span>';
     mainContent.appendChild(typingDiv);
-    window.scrollTo(0, document.body.scrollHeight);
+    scrollToBottom();
 }
 
 function removeTypingIndicator() {
     const indicator = document.getElementById('typing-indicator');
     if (indicator) indicator.remove();
-}
-// Function to force the chat to the bottom
-function scrollToBottom() {
-    const chatContainer = document.querySelector('.vent-main');
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function displayUserMessage(text) {
-    const mainContent = document.querySelector('.vent-main');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'user-message-bubble';
-    messageDiv.innerText = text;
-    mainContent.appendChild(messageDiv);
-    
-    scrollToBottom();
-    autoSaveSession('User', text); 
-}
-
-function displayChatMessage(messageText) {
-    const mainContent = document.querySelector('.vent-main');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'ai-message-bubble';
-    messageDiv.innerHTML = messageText.replace(/\n/g, '<br>');
-    mainContent.appendChild(messageDiv);
-    
-    // Trigger Auto-Scroll and Auto-Save
-    scrollToBottom();
-    autoSaveSession('ResilientCare AI', messageText); 
 }
