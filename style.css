@@ -36,11 +36,20 @@ html, body {
 /* ── Layout ── */
 .app {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 250px 1fr;
   height: 100vh;
   overflow: hidden;
+  transition: grid-template-columns 0.3s ease;
 }
- 
+.app.sidebar-closed {
+    grid-template-columns: 0px 1fr; 
+}
+@media (max-width: 768px) {
+    /* Disable the grid completely on phones */
+    .app, .app.sidebar-closed { 
+        display: block; 
+    }
+}
 /* ── Sidebar ── */
 .sidebar {
   background: var(--surface);
@@ -49,13 +58,20 @@ html, body {
   flex-direction: column;
   padding: 0;
   overflow: hidden;
+  width: 100%;
+  max-height: 200;
+  height: auto;
 }
  
 .sidebar-header {
   padding: 28px 24px 20px;
   border-bottom: 1px solid var(--border);
 }
- 
+.mobile-close-btn{
+    background: black;
+    margin-left: 200px;
+    color: rgb(255, 255, 255);
+}
 .logo {
   font-family: 'Playfair Display', serif;
   font-size: 22px;

@@ -169,355 +169,43 @@ class ResilientCareEngine {
 const AI = new ResilientCareEngine();
 
 // ==========================================
-// 3. UI AND NAVIGATION LOGIC
-// ==========================================
-// ==========================================
-// ASH AI — app.js
-// College friction companion powered by Claude
+// 3. UI, NAVIGATION, AND SIDEBAR LOGIC
 // ==========================================
 
-// ── System Prompt ──
-const SYSTEM_PROMPT = `You are Ash, a warm, emotionally intelligent AI companion built specifically for college students navigating daily academic friction.
-
-Your role:
-- Listen first. Acknowledge feelings before jumping to solutions.
-- Be genuine and conversational — never robotic or clinical.
-- Help students process stress, confusion, burnout, imposter syndrome, harsh grading, deadline overload, financial stress, and social friction.
-- When appropriate, offer one or two small, actionable steps — but never overwhelm.
-- You are NOT a crisis counselor. If someone expresses serious self-harm or crisis, gently direct them to campus mental health or 988 (Suicide & Crisis Lifeline) while staying warm.
-
-Detect and respond to these friction types:
-1. Harsh Grading → Validate the sting, help separate emotional reaction from technical critique, offer a simple next step (e.g., draft a calm email to the TA).
-2. Burnout & Major Doubt → Deep empathy first. Remind them rest is not failure. Avoid toxic positivity. Offer one tiny recovery action.
-3. Confusing Material → Normalize confusion. Help them break the problem into the smallest possible first step.
-4. Imposter Syndrome → Challenge the "everyone else gets it" narrative with gentle reality checks. Share the statistical normalcy of feeling this way.
-5. Deadline Overload → Help triage: what is actually due first? What can be simplified? What can be dropped?
-6. Financial Stress → Acknowledge the very real weight this adds. Point toward campus resources (financial aid office, emergency funds) without dismissing the emotional impact.
-7. Failed Exam → Validate. Separate identity from outcome. Look at what can be changed vs. accepted.
-8. Social / Roommate Friction → Validate without taking sides. Help them articulate what they actually need.
-
-Tone rules:
-- Warm, real, slightly casual — like a wise older friend who has been through it.
-- Concise responses (3–6 sentences for empathy, then 1–3 action steps if relevant).
-- No corporate cheerleading. No "Great question!" or "Absolutely!".
-- No bullet lists unless listing steps — use natural prose otherwise.
-- Format bold key phrases using **bold** markdown for emphasis sparingly.
-- End each response by either asking a gentle follow-up question OR offering a small next step — never just trailing off.
-
-After your response, on a NEW LINE (completely separate), output a JSON object ONLY like this:
-{"mode":"Empathetic","category":"Burnout"}
-
-Valid modes: Empathetic, Direct, Grounded, Crisis
-Valid categories: Grading, Burnout, Confusion, Imposter, Deadlines, Financial, Exam, Social, General`;
-
-// ── State ──
-let conversationHistory = JSON.parse(localStorage.getItem('ash_history') || '[]');
-let selectedMood = null;
-let isTyping = false;
-
-// ==========================================
-// UI HELPERS
-// ==========================================
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-
-function updateChar() {
-  const inp = document.getElementById('user-input');
-  document.getElementById('char-count').textContent = inp.value.length + ' / 1000';
-}
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const app     = document.querySelector('.app');
+  if (!sidebar || !app) return;
+ 
+  if (window.innerWidth <= 640) {
+    sidebar.classList.toggle('show-sidebar');
+    if (overlay) overlay.classList.toggle('show-overlay');
+  } else {
+    app.classList.toggle('sidebar-closed');
   }
 }
-
-function setMood(el, emoji) {
-  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedMood = emoji;
-  const labels = {
-    '😤': 'Frustrated',
-    '😔': 'Feeling down',
-    '😰': 'Anxious',
-    '😐': 'Hanging in there',
-    '😊': 'Doing okay'
-  };
-  document.getElementById('mood-label').textContent = labels[emoji] || '';
-}
-
-function setModeBadge(mode) {
-  const badge = document.getElementById('mode-badge');
-  const map = {
-    Empathetic: 'mode-empathetic',
-    Direct: 'mode-direct',
-    Grounded: 'mode-grounded',
-    Crisis: 'mode-crisis'
-  };
-  badge.className = 'mode-badge ' + (map[mode] || '');
-  badge.textContent = mode || 'Listening';
-}
-
-function scrollToBottom() {
-  const w = document.getElementById('chat-window');
-  w.scrollTop = w.scrollHeight;
-}
-
-// ==========================================
-// SESSION PERSISTENCE
-// ==========================================
-
-function saveSession() {
-  localStorage.setItem('ash_history', JSON.stringify(conversationHistory));
-  const s = document.getElementById('save-status');
-  s.textContent = 'Saved ✓';
-  setTimeout(() => { s.textContent = 'Auto-saved ✓'; }, 1200);
-}
-
-function clearHistory() {
-  if (!confirm('Clear conversation history?')) return;
-  conversationHistory = [];
-  localStorage.removeItem('ash_history');
-  const w = document.getElementById('chat-window');
-  w.innerHTML = '';
-  showEmptyState();
-  setModeBadge('');
-}
-
-// ==========================================
-// EMPTY STATE
-// ==========================================
-
-function showEmptyState() {
-  const w = document.getElementById('chat-window');
-  const es = document.createElement('div');
-  es.className = 'empty-state';
-  es.id = 'empty-state';
-  es.innerHTML = `
-    <div class="empty-logo">Ash<span>.</span></div>
-    <p class="empty-sub">College is hard. Grades, deadlines, burnout, imposter syndrome — I'm here to help you process it all and find a path forward.</p>
-    <div class="prompt-chips">
-      <span class="chip" onclick="injectChip('I just got a really harsh grade and I feel devastated.')">Harsh grade ↗</span>
-      <span class="chip" onclick="injectChip('I\'m burned out and questioning my major.')">Burnout ↗</span>
-      <span class="chip" onclick="injectChip('I have too many deadlines and I don\'t know where to start.')">Deadline panic ↗</span>
-      <span class="chip" onclick="injectChip('I feel like everyone gets it except me.')">Imposter syndrome ↗</span>
-    </div>`;
-  w.appendChild(es);
-}
-
-function removeEmptyState() {
-  const es = document.getElementById('empty-state');
-  if (es) es.remove();
-}
-
-// ==========================================
-// MESSAGE RENDERING
-// ==========================================
-
-/**
- * Renders a message bubble into the chat window.
- * @param {string} role - 'user' or 'ash'
- * @param {string} text - Message content (supports **bold** markdown)
- * @param {object} meta - { mode, category } from Ash's JSON tag
- */
-function renderMessage(role, text, meta = {}) {
-  removeEmptyState();
-  const w = document.getElementById('chat-window');
-  const wrapper = document.createElement('div');
-  wrapper.className = 'msg ' + role;
-
-  // Detection tag above Ash bubbles
-  if (role === 'ash' && meta.mode) {
-    const tag = document.createElement('div');
-    tag.className = 'detect-tag ' + meta.mode.toLowerCase();
-    const icons = { Empathetic: '♡', Direct: '→', Grounded: '◎', Crisis: '!' };
-    tag.textContent =
-      (icons[meta.mode] || '·') + ' ' + meta.mode +
-      (meta.category ? ' · ' + meta.category : '');
-    wrapper.appendChild(tag);
-  }
-
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  bubble.innerHTML = formatText(text);
-  wrapper.appendChild(bubble);
-
-  const metaEl = document.createElement('div');
-  metaEl.className = 'msg-meta';
-  metaEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  wrapper.appendChild(metaEl);
-
-  w.appendChild(wrapper);
-  scrollToBottom();
-}
-
-/**
- * Converts **bold** markdown and newlines into HTML.
- */
-function formatText(text) {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^/, '<p>')
-    .replace(/$/, '</p>');
-}
-
-function showTyping() {
-  removeTyping();
-  const w = document.getElementById('chat-window');
-  const el = document.createElement('div');
-  el.className = 'msg ash';
-  el.id = 'typing-msg';
-  const b = document.createElement('div');
-  b.className = 'bubble typing-bubble';
-  b.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-  el.appendChild(b);
-  w.appendChild(el);
-  scrollToBottom();
-}
-
-function removeTyping() {
-  const t = document.getElementById('typing-msg');
-  if (t) t.remove();
-}
-
-// ==========================================
-// CHIP / QUICK STARTERS
-// ==========================================
-
-/**
- * Populates the input with a preset text and fires sendMessage.
- */
 function injectChip(text) {
   const inp = document.getElementById('user-input');
   inp.value = text;
   updateChar();
   autoResize(inp);
+ 
+  if (window.innerWidth <= 640) {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('show-sidebar');
+    if (overlay) overlay.classList.remove('show-overlay');
+  }
+ 
   sendMessage();
 }
-
-/**
- * Sidebar category button handler — marks it active then fires the chip.
- */
 function sendChip(el, text) {
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   injectChip(text);
 }
-
-// ==========================================
-// CORE SEND → CLAUDE API
-// ==========================================
-
-async function sendMessage() {
-  if (isTyping) return;
-
-  const inp = document.getElementById('user-input');
-  const text = inp.value.trim();
-  if (!text) return;
-
-  inp.value = '';
-  inp.style.height = 'auto';
-  updateChar();
-  isTyping = true;
-  document.getElementById('send-btn').disabled = true;
-
-  // Prepend mood tag if the user set one
-  const fullText = selectedMood ? `[Mood: ${selectedMood}] ${text}` : text;
-
-  renderMessage('user', text);
-  conversationHistory.push({ role: 'user', content: fullText });
-
-  showTyping();
-
-  try {
-    const messages = conversationHistory.map(m => ({ role: m.role, content: m.content }));
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages
-      })
-    });
-
-    if (!res.ok) throw new Error('API error ' + res.status);
-
-    const data = await res.json();
-    const raw = data.content.map(c => c.text || '').join('');
-
-    // Extract the JSON metadata Ash appends at the end
-    const jsonMatch = raw.match(/\{[\s\S]*?"mode"[\s\S]*?\}/);
-    let meta = {};
-    let cleanText = raw;
-
-    if (jsonMatch) {
-      try {
-        meta = JSON.parse(jsonMatch[0]);
-        cleanText = raw.replace(jsonMatch[0], '').trim();
-      } catch (e) {
-        // JSON parse failed — keep raw text as-is
-      }
-    }
-
-    removeTyping();
-    renderMessage('ash', cleanText, meta);
-    conversationHistory.push({ role: 'assistant', content: raw });
-
-    if (meta.mode) setModeBadge(meta.mode);
-    saveSession();
-
-  } catch (err) {
-    removeTyping();
-    renderMessage('ash',
-      "I'm having trouble connecting right now. Try refreshing, or just know — whatever you're going through, it's valid and it can get better.",
-      { mode: 'Grounded', category: 'General' }
-    );
-    console.error('Ash API error:', err);
-  }
-
-  isTyping = false;
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('user-input').focus();
-}
-
-// ==========================================
-// INIT — restore previous session
-// ==========================================
-
-(function init() {
-  if (conversationHistory.length === 0) return;
-
-  removeEmptyState();
-
-  conversationHistory.forEach(m => {
-    if (m.role === 'user') {
-      // Strip the mood tag before displaying
-      renderMessage('user', m.content.replace(/^\[Mood: .+?\] /, ''));
-    } else if (m.role === 'assistant') {
-      const jsonMatch = m.content.match(/\{[\s\S]*?"mode"[\s\S]*?\}/);
-      let meta = {};
-      let cleanText = m.content;
-      if (jsonMatch) {
-        try {
-          meta = JSON.parse(jsonMatch[0]);
-          cleanText = m.content.replace(jsonMatch[0], '').trim();
-        } catch (e) {}
-      }
-      renderMessage('resilientCare', cleanText, meta);
-    }
-  });
-
-  scrollToBottom();
-})();
+// -------------------------------------
 
 function toggleDropdown() {
     const menu = document.getElementById("modeDropdown");
@@ -528,7 +216,6 @@ function selectMode(element, mode) {
     const cards = document.querySelectorAll(".mode-card");
     cards.forEach(c => c.classList.remove("active"));
     element.classList.add("active");
-    // Saving to localStorage just in case you use it for UI later, but the AI ignores this now
     localStorage.setItem('resilientCareMode', mode);
 }
 
@@ -652,14 +339,13 @@ function handleSend() {
         });
 
     }, 1500);
-    window.sendChip = function(text) {
-    const inputElement = document.getElementById('vent-input');
-    if (inputElement) {
-        inputElement.value = text;
-        inputElement.focus(); // Highlights the text box so they can just press send!
+
+    // Close sidebar automatically on mobile if it is open
+    const sidebar = document.getElementById('mobile-sidebar');
+    if (sidebar && sidebar.classList.contains('show-sidebar')) {
+        toggleSidebar(); 
     }
-}
-}
+} // <-- FIXED: Removed the extra trailing bracket that was here!
 
 function displayUserMessage(text) {
     const mainContent = document.querySelector('.vent-main');
