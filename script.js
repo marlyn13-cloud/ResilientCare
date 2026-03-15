@@ -173,16 +173,24 @@ const AI = new ResilientCareEngine();
 // ==========================================
 
 function toggleSidebar() {
+
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  const app     = document.querySelector('.app');
-  if (!sidebar || !app) return;
- 
+  const app = document.querySelector('.app');
+
+  if (!sidebar) return;
+
   if (window.innerWidth <= 640) {
     sidebar.classList.toggle('show-sidebar');
-    if (overlay) overlay.classList.toggle('show-overlay');
+
+    if (overlay) {
+      overlay.classList.toggle('show-overlay');
+    }
+
   } else {
-    app.classList.toggle('sidebar-closed');
+    if (app) {
+      app.classList.toggle('sidebar-closed');
+    }
   }
 }
 function injectChip(text) {
