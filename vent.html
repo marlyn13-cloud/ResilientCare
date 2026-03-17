@@ -43,11 +43,11 @@
                 <div class="sidebar-footer">
                     <div class="cat-label" style="margin-bottom:8px; color: var(--text-dim);">How are you feeling?</div>
                     <div class="mood-strip">
-                        <button class="mood-btn" title="Frustrated">😤</button>
-                        <button class="mood-btn" title="Sad">😔</button>
-                        <button class="mood-btn" title="Anxious">😰</button>
-                        <button class="mood-btn" title="Okay">😐</button>
-                        <button class="mood-btn" title="Good">😊</button>
+                        <button class="mood-btn" onclick="sendChip('I feel frustrated. How can I deal with this frusturation?')" title="Frustrated">😤</button>
+                        <button class="mood-btn" onclick="sendChip('I feel sad. What are some steps to cope?')" title="Sad">😔</button>
+                        <button class="mood-btn" onclick="sendChip('I feel anxious. How can I manage this anxiety?')" title="Anxious">😰</button>
+                        <button class="mood-btn" onclick="sendChip('I feel okay. Just trying to get through the day.')" title="Okay">😐</button>
+                        <button class="mood-btn" onclick="sendChip('I feel good. I\'m doing well today!')" title="Good">😊</button>
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
         <main class="vent-main">
             <span class="hero-emoji">:)</span>
             <h2>Welcome to your safe space</h2>
-            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick starter or type what's on your mind.</p>
+            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick topic starter or simply click on an emoji. You're more than welcome to also type what's on your mind.</p>
         </main>
 
         <div class="input-area">
