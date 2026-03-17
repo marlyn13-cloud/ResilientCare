@@ -1,7 +1,7 @@
 # ResilientCare
 In progress AI project
 
-#SAMPLE AI BOT IS MADE
+#AI BOT IS MADE
 - Implement view insights tab
 - Implement view history tab
 - Implement settings tab
