@@ -132,17 +132,55 @@ class ResilientCareEngine {
                     return "Let's make that the only goal right now. Grab some water, listen to a comfort song, or just rest for a bit. The coursework will be there later; take care of yourself first.";
                 }
             },
+            "anxiety": {
+                autoMode: "Empathetic",
+                handler: (ctx, step, lastInput) => {
+                    const safeInput = (lastInput || "").toLowerCase();
+
+                    // Step 0: The Initial Question
+                    if (step === 0) {
+                        return "I'm really sorry you're feeling anxious. It's completely okay to have days like this. Do you know what's making you feel anxious?";
+                    }
+
+                    // Step 1: The seperating Paths 
+                    if (step === 1) {
+                        // PATH A: They don't know why
+                        if (safeInput.includes("no") || safeInput.includes("not sure") || safeInput.includes("i don't")) {
+                            return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Be kind to yourself today, even something tiny like getting a snack can help. The coursework will be there later; take care of yourself first.";
+                        }
+                        
+                        // PATH B: They say yes, OR they just start venting about the reason
+                        return "Thank you for sharing that with me. When you're dealing with anxiety, it's important to be gentle with yourself. Go grab some water, listen to a comfort song, or just rest for a bit to let your nervous system reset.";
+                    }
+                    
+                    // Fallback just in case they keep talking after the flow ends
+                    return "Take it one small step at a time. I'm always here if you need to keep venting.";
+                }
+            },
             "missed exam": {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
-                    if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet?";
+                    const safeInput = (lastInput || "").toLowerCase();
+                    
+                    if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet to explain what happened?";
+                    
                     if (step === 1) {
-                        if (lastInput.toLowerCase().includes("no") || lastInput.toLowerCase().includes("not yet")) {
-                            return "Okay, that is step one. Don't wait. Keep it brief, honest, and ask if there is any makeup policy. Do you want me to help you draft what to say?";
+                        // 2. PATH A: The user has NOT emailed them yet
+                        if (safeInput.includes("no") || safeInput.includes("not yet")) {
+                            return "Okay, review the syllabus first to see if there is a makeup policy. If there is, follow those instructions exactly. If not, email the professor immediately to explain the situation and ask if there are options.";
                         }
-                        return "Good. You took the hardest step. Have you checked the syllabus to see what the exact policy is for dropped grades or makeups?";
+                        
+                        // 3. PATH B: The user HAS already emailed them
+                        if (safeInput.includes("yes") || safeInput.includes("already")) {
+                            return "Good. You took the hardest step. Now we just have to wait for their reply.";
+                        }
+                        
+                        // 4. FALLBACK: If they type something confusing that isn't yes or no
+                        return "Either way, the best move is to check the syllabus for the makeup policy and email the professor as soon as possible.";
                     }
-                    return "Right now, the ball is in their court. I suggest emailing the professor about any options available. But for now to reduce stress, close your laptop, step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
+                    
+                    // Step 2
+                    return "Right now, to reduce stress, close your laptop, wait for a response,step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
                 }
             },
         };
@@ -188,13 +226,12 @@ class ResilientCareEngine {
         // This allows for instant responses if a user doesn't know whow to express themselves.
         const exactMatches = {
             "I feel frustrated. How can I deal with this frustration?": "frustration", 
-            "I feel frustrated. How can I deal with this frustration?": "frustration", 
             "I feel sad. What are some steps to cope?": "sadness",
             "I missed an exam": "missed exam",
             "i missed an exam": "missed exam",
             "I feel stressed so much coursework has to get done. How can I manage this stress?": "coursework stress",
             "I feel stressed so much coursework has to get done.": "coursework stress",
-            "I feel anxious. How can I manage this anxiety?": "burnout and doubt",
+            "I feel anxious. How can I manage this anxiety?": "anxiety",
             "I got harsh feedback on my assignment and I feel crushed.": "harsh grading",
             "I'm so confused by this assignment. I don't even know where to start.": "confusing material",
             "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
@@ -251,7 +288,9 @@ class ResilientCareEngine {
         if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
             const handler = this.intentDatabase[this.state.currentIntent].handler;
             
-            responseText = handler(this.getContext(), this.state.step);
+            // CRITICAL FIX: Add userInput right here!
+            responseText = handler(this.getContext(), this.state.step, userInput); 
+            
             finalMode = this.intentDatabase[this.state.currentIntent].autoMode;
 
             if (this.state.step === 0) {
@@ -262,7 +301,7 @@ class ResilientCareEngine {
                 this.state.currentIntent = null;
                 this.state.step = 0;
             }
-        } 
+        }
         // 4. SMART RESPONSES
         else {
             if (emotion === "distressed") {
@@ -274,7 +313,7 @@ class ResilientCareEngine {
                 finalMode = "Empathetic";
             } else {
                 const neutralFallbacks = [
-                    "I hear you. I'm currently focused on helping with college stress, but I'm here if you need to vent!",
+                    "I hear you. I'm currently focused on helping with college stress, but I'm here if you need to vent about academics!",
                     "Sounds like a plan. Let me know if you run into any overwhelming friction today."
                 ];
                 responseText = neutralFallbacks[Math.floor(Math.random() * neutralFallbacks.length)];
