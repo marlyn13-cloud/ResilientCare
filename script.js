@@ -132,6 +132,19 @@ class ResilientCareEngine {
                     return "Let's make that the only goal right now. Grab some water, listen to a comfort song, or just rest for a bit. The coursework will be there later; take care of yourself first.";
                 }
             },
+            "missed exam": {
+                autoMode: "Direct",
+                handler: (ctx, step, lastInput) => {
+                    if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet?";
+                    if (step === 1) {
+                        if (lastInput.toLowerCase().includes("no") || lastInput.toLowerCase().includes("not yet")) {
+                            return "Okay, that is step one. Don't wait. Keep it brief, honest, and ask if there is any makeup policy. Do you want me to help you draft what to say?";
+                        }
+                        return "Good. You took the hardest step. Have you checked the syllabus to see what the exact policy is for dropped grades or makeups?";
+                    }
+                    return "Right now, the ball is in their court. I suggest emailing the professor about any options available. But for now to reduce stress, close your laptop, step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
+                }
+            },
         };
 
         this.categories = Object.keys(this.intentDatabase);
@@ -177,6 +190,8 @@ class ResilientCareEngine {
             "I feel frustrated. How can I deal with this frustration?": "frustration", 
             "I feel frustrated. How can I deal with this frustration?": "frustration", 
             "I feel sad. What are some steps to cope?": "sadness",
+            "I missed an exam": "missed exam",
+            "i missed an exam": "missed exam",
             "I feel stressed so much coursework has to get done. How can I manage this stress?": "coursework stress",
             "I feel stressed so much coursework has to get done.": "coursework stress",
             "I feel anxious. How can I manage this anxiety?": "burnout and doubt",
@@ -191,11 +206,19 @@ class ResilientCareEngine {
             "I'm so lost on this assignment.": "confusing material",
             "I'm totally burned out.": "burnout and doubt",
             "Everyone else gets it but me.": "imposter syndrome",
-            "Too many deadlines at once.": "deadline overload"
+            "Too many deadlines at once.": "deadline overload",
+            //case sensitivity variations
+            "coursework is piling up and I'm stressed.": "coursework stress",
+            "i got a bad grade and I feel crushed.": "harsh grading",
+            "i'm so lost on this assignment.": "confusing material",
+            "i'm totally burned out.": "burnout and doubt",
+            "everyone else gets it but me.": "imposter syndrome",
+            "too many deadlines at once.": "deadline overload"
         };
 
         let topMLIntent = null;
         let mlConfidence = 0;
+       
 
         if (intentClassifier && !exactMatches[userInput]) {
             const result = await intentClassifier(userInput, this.categories);
