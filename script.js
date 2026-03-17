@@ -1,171 +1,243 @@
-// ==========================================
-// 1. AI SENTIMENT MODEL (Browser version)
+// 1. AI BRAIN
 // ==========================================
 let sentimentModel = null;
+let intentClassifier = null; 
 
 async function loadAIModel() {
     if (!window.transformers) {
-        console.warn("Transformers.js not loaded. Make sure the CDN is in your HTML.");
+        console.warn("Transformers.js not loaded. Check your HTML CDN.");
         return;
     }
-    sentimentModel = await window.transformers.pipeline(
-        "sentiment-analysis",
-        "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
-    );
-    console.log("AI Model Loaded");
+
+    const indicator = document.getElementById('save-indicator');
+    if (indicator) indicator.innerText = "Downloading AI Models... (Once)";
+
+    try {
+        // 1. Loads the Distress Detector
+        sentimentModel = await window.transformers.pipeline(
+            "sentiment-analysis",
+            "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
+        );
+
+        // 2. Load the Classifier 
+        intentClassifier = await window.transformers.pipeline(
+            "zero-shot-classification",
+            "Xenova/mobilebert-uncased-mnli"
+        );
+
+        console.log("AI Models Loaded Successfully");
+        if (indicator) {
+            indicator.innerText = "AI Ready ✓";
+            setTimeout(() => { indicator.innerText = "Auto-saved ✓"; }, 2000);
+        }
+    } catch (error) {
+        console.error("Model loading failed:", error);
+    }
 }
 
 loadAIModel();
 
 async function detectEmotion(text){
-    if(!sentimentModel){
-        return "neutral";
-    }
+    if(!sentimentModel) return "neutral";
     const result = await sentimentModel(text);
-    if(result && result[0] && result[0].label === "NEGATIVE"){
-        return "distressed";
-    }
+    if(result && result[0] && result[0].label === "NEGATIVE") return "distressed";
     return "neutral";
 }
 
+// 2.AI ENGINE
 // ==========================================
-// 2. EMOTION & INTENT ENGINES
-// ==========================================
-class EmotionModel {
-    constructor() {
-        this.emotions = {
-            stress: ["overwhelmed","burnout","too much","pressure","breaking"],
-            confusion: ["lost","confused","don't understand","stuck"],
-            frustration: ["unfair","failed","angry","annoyed","points docked"],
-            sadness: ["tired","hopeless","sad","exhausted","pointless"]
-        }
-    }
-
-    detectEmotion(text){
-        const lower = text.toLowerCase();
-        let scores = { stress:0, confusion:0, frustration:0, sadness:0 };
-
-        for(const emotion in this.emotions){
-            this.emotions[emotion].forEach(word=>{
-                if(lower.includes(word)){
-                    scores[emotion]++;
-                }
-            });
-        }
-
-        let highest = "neutral";
-        let bestScore = 0;
-
-        for(const e in scores){
-            if(scores[e] > bestScore){
-                highest = e;
-                bestScore = scores[e];
-            }
-        }
-        return highest;
-    }
-}
-
-const EmotionAI = new EmotionModel();
 
 class ResilientCareEngine {
-    constructor(){
-        this.memory = []; 
-        this.intents = [
-            {
-                category: "Harsh Grading",
-                autoMode: "Direct", 
-                keywords: ["failed", "grade", "rubric", "points docked", "harsh", "feedback", "unfair"],
-                responses: {
-                    Direct: "That was a high-friction moment, but we can reset.\n1. Spend 2 minutes breathing to drop your heart rate.\n2. Isolate the exact technical critique and ignore the tone.\n3. Draft a short, neutral email to the TA for clarification."
-                }
-            },
-            {
-                category: "Confusing Material",
-                autoMode: "Balanced", 
-                keywords: ["confused", "lost", "stuck", "instructions", "assignment", "don't understand"],
-                responses: {
-                    Balanced: "You aren't lazy; you're just overwhelmed by the input. Set a timer for 10 minutes. Don't try to solve the whole assignment—just map out the very first step. Then take a break."
-                }
-            },
-            {
-                category: "Burnout & Identity",
-                autoMode: "Empathetic",
-                keywords: ["quit", "burnout", "major", "not cut out", "tired", "hopeless", "pointless", "dropping"],
-                responses: {
-                    Empathetic: "Pouring your life into this major and feeling like you're hitting a wall is deeply discouraging. You've been under immense pressure. Just let yourself rest right now."
-                }
-            }
-        ];
+    constructor() {
+        this.memory = [];
+        this.maxMemory = 12;
 
-        this.fallbackResponses = {
-            Balanced: "This sounds incredibly draining, and your frustration makes total sense. Let's step away from the screen for 15 minutes, then look at just one small piece of the problem."
+        // Tracks where the user is in the conversation
+        this.state = {
+            currentIntent: null,
+            step: 0,
+            lastEmotion: "neutral"
         };
-    }
 
-    analyzeIntent(text){
-        const lower = text.toLowerCase();
-        let bestMatch = null;
-        let highestScore = 0;
-
-        this.intents.forEach(intent => {
-            let score = 0;
-            intent.keywords.forEach(word=>{
-                if(lower.includes(word)){
-                    score++;
+        this.intentDatabase = {
+            // Different types of intents that coincide with the users emotional state. 
+            // Each has a handler that generates the appropriate response based on the conversation step.
+            "coursework stress": {
+                autoMode: "Direct",
+                handler: (ctx, step) => {
+                    if (step === 0) return "I hear you. Coursework can pile up fast. Let's get it out of your head. Do a 'Brain Dump'—type out everything you need to do, big or small, and send it to me.";
+                    if (step === 1) return "Okay, deep breath. Look at that list and pick the single most urgent task. What's the very first, ridiculously small micro-step you can take to start just that one task?";
+                    return "Perfect. Let's use the Pomodoro technique. Set a timer for 25 minutes and focus ONLY on that one step. Take a 5-minute break after. You've got this!";
                 }
-            });
-
-            if(score > highestScore){
-                highestScore = score;
-                bestMatch = intent;
+            },
+            "harsh grading": {
+                autoMode: "Direct",
+                handler: (ctx, step) => {
+                    if (step === 0) return "That feedback probably felt personal. What exactly did they say?";
+                    if (step === 1) return "Okay, let’s strip the tone away. What’s the actual technical issue they pointed out?";
+                    return "Focus only on fixing that one issue. Ignore everything else for now. We can tackle the rest later.";
+                }
+            },
+            "confusing material": {
+                autoMode: "Balanced",
+                handler: (ctx, step) => {
+                    if (step === 0) return "Yeah, that ‘nothing makes sense’ feeling is the worst. What topic is this for?";
+                    if (step === 1) return "Let’s shrink it. What’s the first thing in the problem you *do* recognize?";
+                    return "Good. Start there—don’t solve it fully, just understand that one piece.";
+                }
+            },
+            "burnout and doubt": {
+                autoMode: "Empathetic",
+                handler: (ctx, step) => {
+                    if (step === 0) return "That sounds exhausting. How long have you been feeling like this?";
+                    if (step === 1) return "That’s a lot to carry. Be honest—when was the last time you actually rested?";
+                    return "Right now, productivity isn’t the goal. Recovery is. Even 20 minutes completely away from the screen will help.";
+                }
+            },
+            "imposter syndrome": {
+                autoMode: "Grounded",
+                handler: (ctx, step) => {
+                    if (step === 0) return "It feels like everyone else gets it except you, right?";
+                    if (step === 1) return "That’s way more common than you think. What specifically feels confusing?";
+                    return "Let’s isolate one concept and break it down together. You aren't behind, you are just learning.";
+                }
+            },
+            "deadline overload": {
+                autoMode: "Direct",
+                handler: (ctx, step) => {
+                    if (step === 0) return "Too many deadlines at once can shut your brain down. What’s due absolutely first?";
+                    if (step === 1) return "Good. Ignore everything else. What’s the very first step in that specific task?";
+                    return "Focus only on that step. Don’t think beyond it yet. One step is progress.";
+                }
             }
-        });
+        };
 
-        return { intent: bestMatch, score: highestScore };
+        this.categories = Object.keys(this.intentDatabase);
     }
 
-    remember(role, text){
-        this.memory.push({role, text});
-        if(this.memory.length > 10){
-            this.memory.shift(); 
+    remember(role, text) {
+        this.memory.push({ role, text });
+        if (this.memory.length > this.maxMemory) this.memory.shift();
+    }
+
+    getContext() {
+        return this.memory.map(m => `${m.role}: ${m.text}`).join("\n");
+    }
+
+    applyEmotionLayer(baseText, emotion) {
+        if (emotion === "distressed") {
+            return "I can tell this is really weighing on you. " + baseText;
         }
+        return baseText;
     }
 
-    async generateResponse(userInput){
+    maybeAddFollowUp(text) {
+        if (text.includes("?")) return text;
+        const followUps = [
+            "What part of this is hardest right now?",
+            "What’s making this feel overwhelming?",
+            "What’s one small step you could try?"
+        ];
+        if (Math.random() > 0.5) {
+            return text + "\n\n" + followUps[Math.floor(Math.random() * followUps.length)];
+        }
+        return text;
+    }
+
+    async generateResponse(userInput) {
+        this.remember("user", userInput);
+
         const emotion = await detectEmotion(userInput);
+        
+        // 1. Quick Starter presets based on exact matches to common student stress scenarios. 
+        // This allows for instant responses if a user doesn't know whow to express themselves.
+        const exactMatches = {
+            "I feel stressed so much coursework has to get done. How can I manage this stress?": "coursework stress",
+            "I got harsh feedback on my assignment and I feel crushed.": "harsh grading",
+            "I'm so confused by this assignment. I don't even know where to start.": "confusing material",
+            "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
+            "I feel like everyone else gets it and I'm the only one lost.": "imposter syndrome",
+            "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload"
+        };
 
-        if(emotion === "distressed"){
-            return {
-                text: "That sounds really overwhelming. When everything piles up like this, the brain goes into protection mode. Let's slow things down together. What's the smallest thing on your plate right now?",
-                detectedMode: "Empathetic"
-            };
+        let topMLIntent = null;
+        let mlConfidence = 0;
+
+        if (intentClassifier && !exactMatches[userInput]) {
+            const result = await intentClassifier(userInput, this.categories);
+            topMLIntent = result.labels[0];
+            mlConfidence = result.scores[0];
         }
 
-        const analysis = this.analyzeIntent(userInput);
-
-        if (analysis.intent && analysis.score > 0) {
-            const autoSelectedMode = analysis.intent.autoMode;
-            return {
-                text: analysis.intent.responses[autoSelectedMode],
-                detectedMode: autoSelectedMode
-            };
+        // 2. CONVERSATION STATE 
+        if (exactMatches[userInput]) {
+            this.state.currentIntent = exactMatches[userInput];
+            this.state.step = 0;
+        } 
+        else if (this.state.currentIntent !== null) {
+            if (mlConfidence > 0.70 && topMLIntent !== this.state.currentIntent) {
+                this.state.currentIntent = topMLIntent;
+                this.state.step = 0;
+            } else {
+                this.state.step++;
+            }
+        } 
+        else if (mlConfidence > 0.25) {
+            this.state.currentIntent = topMLIntent;
+            this.state.step = 0;
         }
 
-        return { 
-            text: this.fallbackResponses["Balanced"],
-            detectedMode: "Balanced" 
+        let responseText;
+        let finalMode = "Balanced";
+
+        // 3. GENERATE RESPONSE BASED ON STATE
+        if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
+            const handler = this.intentDatabase[this.state.currentIntent].handler;
+            
+            responseText = handler(this.getContext(), this.state.step);
+            finalMode = this.intentDatabase[this.state.currentIntent].autoMode;
+
+            if (this.state.step === 0) {
+                responseText = this.applyEmotionLayer(responseText, emotion);
+            }
+
+            if (this.state.step >= 2) {
+                this.state.currentIntent = null;
+                this.state.step = 0;
+            }
+        } 
+        // 4. SMART RESPONSES
+        else {
+            if (emotion === "distressed") {
+                const stressedFallbacks = [
+                    "That sounds really tough to carry. Let’s not solve everything right now—what’s one small thing you can do for yourself?",
+                    "I hear how heavy this feels. You don't have to figure it all out today. Just breathe."
+                ];
+                responseText = stressedFallbacks[Math.floor(Math.random() * stressedFallbacks.length)];
+                finalMode = "Empathetic";
+            } else {
+                const neutralFallbacks = [
+                    "I hear you. I'm currently focused on helping with college stress, but I'm here if you need to vent!",
+                    "Sounds like a plan. Let me know if you run into any overwhelming friction today."
+                ];
+                responseText = neutralFallbacks[Math.floor(Math.random() * neutralFallbacks.length)];
+                finalMode = "Grounded";
+            }
+        }
+
+        this.remember("assistant", responseText);
+
+        return {
+            text: responseText,
+            detectedMode: finalMode
         };
     }
 }
 
 const AI = new ResilientCareEngine();
 
-// ==========================================
-// 3. UI, NAVIGATION, AND SIDEBAR LOGIC
-// ==========================================
+//END OF AI LOGIC
 
-// ==========================================
 // 3. UI, NAVIGATION, AND MENU LOGIC
 // ==========================================
 
@@ -179,7 +251,7 @@ window.toggleMenu = function() {
     }
 }
 
-// Drops starter text into the chat box and auto-closes the menu
+// Drops starter text into the chat box 
 window.sendChip = function(text) {
     const inputElement = document.getElementById('vent-input');
     if (inputElement) {
@@ -203,9 +275,10 @@ function navigateTo(screenId) {
     if(target) target.style.display = 'block';
 }
 
-// ── INITIALIZATION (Event Listeners) ──
 document.addEventListener("DOMContentLoaded", () => {
-    
+// END OF VENT BOX FUNCTIONS
+
+//HOME SCREEN FUNCTIONS
     // 1. Setup Date on Home Screen
     const dateEl = document.getElementById('current-date');
     if(dateEl) {
@@ -225,9 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 content.style.maxHeight = content.scrollHeight + "px";
             }
         });
-        
     }
-    
 
     // 3. Vent Button Hold Logic
     const circle = document.querySelector('.progress-ring__circle');
@@ -267,7 +338,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ==========================================
 // 4. VENT BOX CHAT & AUTO-SAVE LOGIC
 // ==========================================
 
@@ -301,7 +371,6 @@ function scrollToBottom() {
     if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Handle sending the message
 window.handleSend = function() {
     const inputElement = document.getElementById('vent-input');
     const userText = inputElement.value.trim();
@@ -313,14 +382,11 @@ window.handleSend = function() {
     displayUserMessage(userText);
     showTypingIndicator();
 
-    AI.remember("user", userText);
-
     setTimeout(() => {
         removeTypingIndicator();
 
         AI.generateResponse(userText).then(aiResponse => {
             displayChatMessage(aiResponse.text);
-            AI.remember("ai", aiResponse.text); 
             console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
         });
 

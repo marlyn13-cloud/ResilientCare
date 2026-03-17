@@ -51,8 +51,7 @@ html, body {
         display: block; 
     }
 }
-/* =========================================
-   SINGLE COLUMN & INLINE MENU (Mobile First)
+/* Mobile Preference
    ========================================= */
 
 .app-single-column {
@@ -60,22 +59,21 @@ html, body {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    background: var(--bg); /* Uses your dark background variable */
+    background: var(--bg); 
 }
 
 /* The Collapsible Menu Container */
 .inline-menu-content {
     max-height: 0;
     overflow: hidden;
-    background-color: var(--surface); /* Ash-AI Dark Panel */
+    background-color: var(--surface);
     transition: max-height 0.4s ease-in-out;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 
-/* When Javascript adds this class, it slides open! */
 .inline-menu-content.expanded {
-    max-height: 500px; /* Big enough to fit your buttons */
+    max-height: 500px; 
     overflow-y: auto;
 }
 
@@ -523,7 +521,7 @@ body {
 }
 .auto-save-text {
     font-size: 13px;
-    color: #9CA3AF; /* Soft, non-distracting gray */
+    color: #9CA3AF; 
     font-weight: 500;
     font-style: italic;
     transition: color 0.3s ease;
@@ -719,7 +717,7 @@ textarea::placeholder {
     background: none; 
 }
 
-/* 6. Action Row (Horizontal Bottom Buttons) */
+/* 6. Action Row (Horizontal Buttons) */
 .action-row {
     display: flex;
     flex-direction: row;
@@ -743,8 +741,8 @@ textarea::placeholder {
 .btn-insights:hover, .btn-history:hover, .btn-settings:hover {
     background-color: #f0f0f0;
 }
-/* =========================================
-   ACCORDION MENU (Quick Starters)
+
+/* HAMBURGER MENU (Quick Starters)
    ========================================= */
 
 /* Make the label a clickable button */
@@ -775,7 +773,6 @@ textarea::placeholder {
     transform: rotate(-90deg);
 }
 
-/* The sliding container */
 .collapsible-content {
     padding: 0;
     max-height: 500px; /* Starts open */
@@ -783,7 +780,7 @@ textarea::placeholder {
     transition: max-height 0.3s ease-in-out;
 }
 
-/* Matches your screenshot's clean, transparent buttons */
+/*  transparent buttons */
 .cat-btn {
     width: 100%;
     background: transparent;
