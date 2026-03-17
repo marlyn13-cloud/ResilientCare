@@ -109,7 +109,29 @@ class ResilientCareEngine {
                     if (step === 1) return "Good. Ignore everything else. What’s the very first step in that specific task?";
                     return "Focus only on that step. Don’t think beyond it yet. One step is progress.";
                 }
-            }
+            },
+            "frustration": {
+                autoMode: "Empathetic",
+                handler: (ctx, step, lastInput) => {
+                    if (step === 0) return "Frustration is such a heavy feeling. Is there a specific class, project, or situation that's triggering this right now, or is it just everything at once?";
+                    if (step === 1) {
+                        if (lastInput.length > 30) return "That sounds incredibly annoying to deal with. When things get this frustrating, it helps to step back. What is one tiny thing you actually have control over in this situation?";
+                        return "I hear you. When things get this frustrating, it helps to shrink the focus. What is one tiny thing you actually have control over right now?";
+                    }
+                    return "Focus just on that piece you can control. Sometimes the best way to deal with frustration is to completely step away for 10 minutes, grab some water, and reset. You don't have to fix it all right now.";
+                }
+            },
+            "sadness": {
+                autoMode: "Empathetic",
+                handler: (ctx, step, lastInput) => {
+                    if (step === 0) return "I'm really sorry you're feeling sad. It's completely okay to have days like this. Do you know what's making you feel down, or is it just a general heaviness?";
+                    if (step === 1) {
+                        if (lastInput.includes("don't know") || lastInput.length < 15) return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
+                        return "Thank you for sharing that with me. When you're feeling sad, it's important to be gentle with yourself. Have you done anything kind for yourself today, even something tiny?";
+                    }
+                    return "Let's make that the only goal right now. Grab some water, listen to a comfort song, or just rest for a bit. The coursework will be there later; take care of yourself first.";
+                }
+            },
         };
 
         this.categories = Object.keys(this.intentDatabase);
@@ -152,12 +174,24 @@ class ResilientCareEngine {
         // 1. Quick Starter presets based on exact matches to common student stress scenarios. 
         // This allows for instant responses if a user doesn't know whow to express themselves.
         const exactMatches = {
+            "I feel frustrated. How can I deal with this frustration?": "frustration", 
+            "I feel frustrated. How can I deal with this frustration?": "frustration", 
+            "I feel sad. What are some steps to cope?": "sadness",
             "I feel stressed so much coursework has to get done. How can I manage this stress?": "coursework stress",
+            "I feel stressed so much coursework has to get done.": "coursework stress",
+            "I feel anxious. How can I manage this anxiety?": "burnout and doubt",
             "I got harsh feedback on my assignment and I feel crushed.": "harsh grading",
             "I'm so confused by this assignment. I don't even know where to start.": "confusing material",
             "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
             "I feel like everyone else gets it and I'm the only one lost.": "imposter syndrome",
-            "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload"
+            "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload",
+            //If user types instead of selecting a quick starter.
+            "Coursework is piling up and I'm stressed.": "coursework stress",
+            "I got a bad grade and I feel crushed.": "harsh grading",
+            "I'm so lost on this assignment.": "confusing material",
+            "I'm totally burned out.": "burnout and doubt",
+            "Everyone else gets it but me.": "imposter syndrome",
+            "Too many deadlines at once.": "deadline overload"
         };
 
         let topMLIntent = null;
