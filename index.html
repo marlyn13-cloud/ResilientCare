@@ -34,39 +34,12 @@
             </nav>
         </div>
     </div>
-      <div id="inline-menu" class="inline-menu-content">
-            <div class="dark-panel-inner">
-                <div class="friction-categories">
-                    <div class="cat-label" style="color: var(--text-dim);">Quick starters</div>
-                    
-                    <button class="cat-btn active" onclick="sendChip('I got harsh feedback on my assignment and I feel crushed.')">
-                        <span class="cat-dot" style="background:#d4924a"></span>Harsh grading
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I\'m so confused by this assignment. I don\'t even know where to start.')">
-                        <span class="cat-dot" style="background:#4ab8a0"></span>Confusing material
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I\'m completely burned out. I don\'t know why I\'m even in this major.')">
-                        <span class="cat-dot" style="background:#7a7872"></span>Burnout &amp; doubt
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I feel like everyone else gets it and I\'m the only one lost.')">
-                        <span class="cat-dot" style="background:#8a6faf"></span>Imposter syndrome
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I have three deadlines this week and I\'m completely overwhelmed.')">
-                        <span class="cat-dot" style="background:#cc8855"></span>Deadline overload
-                    </button>
-                </div>
-
-                <div class="sidebar-footer">
-                    <div class="cat-label" style="margin-bottom:8px; color: var(--text-dim);">How are you feeling?</div>
-                    <div class="mood-strip">
-                        <button class="mood-btn" onclick="sendChip('I feel frustrated. How can I deal with this frustration?')" title="Frustrated">😤</button>
-                        <button class="mood-btn" onclick="sendChip('I feel sad. What are some steps to cope?')" title="Sad">😔</button>
-                        <button class="mood-btn" onclick="sendChip('I feel anxious. How can I manage this anxiety?')" title="Anxious">😰</button>
-                        <button class="mood-btn" onclick="sendChip('I feel stressed so much coursework has to get done.')" title="Stressed">😐</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      ‹div id="vent-box-screen" class="screen" style="display: none;"›
+‹div class="vent-box-layout">
+<nav class="vent-nav">
+<button onclick="toggleSidebar()" class="hamburger-btn">
+    =
+    </button>
             <button class="icon-btn" onclick="navigateTo('home-screen')">← Back</button>
             <span class="nav-title"> Vent Box</span>
             <button class="icon-btn"></button>
