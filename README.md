@@ -1,7 +1,10 @@
 # ResilientCare
 In progress AI project
 
-#SAMPLE AI BOT IS MADE
+#AI BOT IS MADE
+
+- Update vs code to match with github code
+- FIX: when clicking outside the vent button it goes to a blank page. it should stay in the home page unless the vent button is fully pressed.
 - Implement view insights tab
 - Implement view history tab
 - Implement settings tab
