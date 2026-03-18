@@ -17,7 +17,7 @@
             
             <p id="current-date" style="color: gray; margin-bottom: 20px;"></p>
 
-            <div class="vent-container" onclick="navigateTo('vent-box-screen')">
+            <div class="vent-container">
                 <svg class="progress-ring" width="220" height="220">
                     <circle class="progress-ring__circle" stroke="#4a90e2" stroke-width="8" fill="transparent" r="95" cx="110" cy="110"/>
                 </svg>
@@ -29,33 +29,9 @@
 
             <nav class="action-row">
                 <button class="btn-insights">View Insights</button>
-                <button class="btn-history" >View History</button>
-                <button class="btn-settings"">View Settings</button>
-            </nav>
+                <button class="btn-history">View History</button>
+                <button class="btn-settings">View Settings</button> </nav>
         </div>
     </div>
-
-    <div id="vent-box-screen" class="screen" style="display: none;">
-        <div class="vent-box-layout">
-            <nav class="vent-nav">
-                <button onclick="toggleSidebar()" class="hamburger-btn">
-☰
-</button>
-            <button class="icon-btn" onclick="navigateTo('home-screen')">← Back</button>
-            <span class="nav-title"> Vent Box</span>
-            <button class="icon-btn"></button>
-            </nav>
-
-            <main class="vent-main">
-                <span class="hero-emoji">🌸</span>
-            <p>I'm here to listen. This is a safe place.</p>
-            <div class="input-area">
-            <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
-            <button class="send-fab" onclick="handleSend()">➤</button>
-            </div>
-            </main>
-        </div>
-    </div>
-
-</body>
+    </body>
 </html>

@@ -417,6 +417,8 @@ document.addEventListener("DOMContentLoaded", () => {
             holdTimer = setTimeout(() => {
                 clearInterval(progressInterval);
                 window.location.href = "vent.html"; 
+                //Resets the progress bar if not fully pressed.
+                circle.style.strokeDashoffset = circumference;
             }, 1500); 
         }
 
