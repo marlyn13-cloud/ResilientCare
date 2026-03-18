@@ -29,35 +29,30 @@
 
             <nav class="action-row">
                 <button class="btn-insights">View Insights</button>
-                <button class="btn-history" >View History</button>
-                <button class="btn-settings"">View Settings</button>
-            </nav>
+                <button class="btn-history">View History</button>
+                <button class="btn-settings">View Settings</button> </nav>
         </div>
     </div>
-      <div id="vent-box-screen" class="screen" style="display: none;">
-    <div class="vent-box-layout">
-        <nav class="vent-nav">
-            <button onclick="toggleSidebar()" class="hamburger-btn"> = </button>
-        </nav>
-    </div>
-</div>
-
-            <button class="icon-btn" onclick="navigateTo('home-screen')">← Back</button>
-            <span class="nav-title"> Vent Box</span>
-            <button class="icon-btn"></button>
+    
+    <div id="vent-box-screen" class="screen" style="display: none;">
+        <div class="vent-box-layout">
+            
+            <nav class="vent-nav">
+                <button onclick="toggleSidebar()" class="hamburger-btn"> = </button>
+                <span class="nav-title">Vent Box</span>
+                <button class="icon-btn" onclick="navigateTo('home-screen')">← Back</button>
             </nav>
 
             <main class="vent-main">
                 <span class="hero-emoji">:)</span>
-                  <h2>Welcome to your safe space</h2>
-            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick topic starter or simply click on an emoji. You're more than welcome to also type what's on your mind.</p>
-            <div class="input-area">
-            <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
-            <button class="send-fab" onclick="handleSend()">➤</button>
-            </div>
+                <h2>Welcome to your safe space</h2>
+                <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick topic starter or simply click on an emoji. You're more than welcome to also type what's on your mind.</p>
             </main>
-        </div>
-    </div>
 
-</body>
+            <div class="input-area">
+                <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>
+                <button class="send-fab" onclick="handleSend()">➤</button>
+            </div>
+
+        </div> </div> </body>
 </html>
