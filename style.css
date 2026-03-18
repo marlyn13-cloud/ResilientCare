@@ -330,11 +330,20 @@ body {
     background:#16171d;
     z-index: 10;
     border-bottom: 1px solid #0e0f13;;
+    position: relative;
 }
 .nav-title {
     font-size: 22px;
     color: #9b9a9a;
     font-weight: 600;
+    position: absolute; 
+    left: 50%; 
+    transform: translateX(-50%);
+}
+.nav-left {
+    display: flex; /* This forces exactly 20px of safe space between the two buttons */
+    position: absolute;
+    left: 100px; /* Aligns the left button with the nav padding */
 }
 /* ── Main Chat ── */
 .chat-area {
@@ -395,37 +404,6 @@ body {
     border-radius: 50%; 
     background: var(--teal); }
  
-.mode-badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.3px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  transition: all 0.3s;
-}
- 
-.mode-badge.mode-empathetic { 
-    background: var(--teal-soft); 
-    border-color: var(--teal); 
-    color: var(--teal); }
-.mode-badge.mode-direct     { 
-    background: var(--amber-soft); 
-    border-color: var(--amber); 
-    color: var(--amber); 
-}
-.mode-badge.mode-grounded   { 
-    background: var(--surface-2); 
-    border-color: var(--border-strong); 
-    color: var(--text-muted); 
-}
-.mode-badge.mode-crisis     { 
-    background: var(--red-soft); 
-    border-color: var(--red); 
-    color: var(--red);
- }
  
 /* ── Messages ── */
 .messages {
@@ -671,51 +649,6 @@ textarea::placeholder {
     }
 }
 
-/* 5. Mode Card Styling */
-.mode-card {
-    display: flex;
-    align-items: center;
-    background: #fff;
-    border-radius: 15px;
-    padding: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
-    text-align: left;
-}
-
-.mode-card.active {
-    border-color: #4a90e2;
-    background-color: #f8fbff;
-}
-
-.icon-box {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 15px;
-}
-
-.heart { background-color: #e8f0fe; }
-.lightning { background-color: #f1f3f4; }
-.scale { background-color: #f1f3f4; }
-
-.mode-text strong {
-    display: block;
-    color: #333;
-    font-size: 16px;
-}
-
-.mode-text p {
-    color: #666;
-    font-size: 13px;
-    margin: 0;
-    padding: 0;
-    background: none; 
-}
 
 /* 6. Action Row (Horizontal Buttons) */
 .action-row {
