@@ -704,11 +704,12 @@ textarea::placeholder {
 .quick-starters {
     display: grid;
     /* Automatically creates columns that fit the screen */
-    grid-template-columns: repeat(5, 1fr); 
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 16px;
     width: 100%;
-    max-width: 600px;
-    margin: 0 auto 30px auto; 
+    max-width: 850px;
+    margin: 0 auto; 
+    padding-bottom: 30px;
 }
 
 .starter-btn {
@@ -725,6 +726,7 @@ textarea::placeholder {
     align-items: center;
     gap: 8px;
     transition: all 0.2s ease;
+    justify-content: center;
 }
 
 .btn-emoji {
@@ -735,7 +737,7 @@ textarea::placeholder {
 .starter-btn:hover, .starter-btn:focus {
     background: #2a2b36;
     border-color: #C084FC; 
-    transform: translateY(-2px); 
+    transform: translateY(-3px); 
     outline: none;
 }
 
