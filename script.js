@@ -500,3 +500,158 @@ function removeTypingIndicator() {
     const indicator = document.getElementById('typing-indicator');
     if (indicator) indicator.remove();
 }
+
+// 5. Insights Page Graph Generation Logic
+// ==========================================
+
+function loadInsightsGraph() {
+    try {
+        const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
+
+        // 1. NEW LOGIC: Group messages into sessions based on 30-minute time gaps!
+        const sessions = [];
+        let currentSession = [];
+        let lastTimeObj = null;
+
+        history.forEach(msg => {
+            if(!msg.date || !msg.time) return;
+            
+            // Combine date and time to calculate the exact gap between messages
+            const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
+            
+            if (lastTimeObj) {
+                const diffMins = (msgTimeObj - lastTimeObj) / (1000 * 60);
+                // If more than 30 minutes passed, start a new session node
+                if (diffMins > 30) { 
+                    sessions.push(currentSession);
+                    currentSession = [];
+                }
+            }
+            currentSession.push(msg);
+            lastTimeObj = msgTimeObj;
+        });
+        
+        // Push the final session into the array
+        if (currentSession.length > 0) sessions.push(currentSession);
+
+        const totalSessions = sessions.length;
+        const totalConnections = Math.max(0, totalSessions - 1);
+        
+        const nodesContainer = document.getElementById('graph-nodes');
+        const linesContainer = document.getElementById('graph-lines');
+        const scrollContainer = document.getElementById('graph-scroll-container');
+        const statsSummary = document.getElementById('stats-summary');
+        const themeTags = document.getElementById('theme-tags');
+
+        if (!nodesContainer || !linesContainer || !scrollContainer || !statsSummary || !themeTags) return; 
+
+        linesContainer.innerHTML = ''; 
+        nodesContainer.innerHTML = ''; 
+        statsSummary.innerText = `${totalSessions} Sessions — ${totalConnections} Connections`;
+
+        if (totalSessions === 0) {
+            nodesContainer.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px; font-size: 14px;">Complete a chat session in the Vent Box to generate your insights graph.</p>';
+            themeTags.innerHTML = '<span class="theme-pill">No data yet</span>';
+            return;
+        }
+
+        const allThemes = new Set();
+        const getSummaryWord = (messages) => {
+            const userTexts = messages.filter(m => m.role === 'User').map(m => m.text);
+            const combined = userTexts.join(" ").toLowerCase();
+            const keywords = ["overwhelm", "worried", "concerned", "anxious", "frustrated", "sad", "stressed", "burnout", "harsh", "deadline", "lost"];
+            
+            for (let word of keywords) {
+                if (combined.includes(word)) {
+                    allThemes.add(word);
+                    return word;
+                }
+            }
+            allThemes.add("vented");
+            return "vented"; 
+        };
+
+        const nodesData = [];
+        const nodeSpacingX = 120; 
+        const requiredWidth = Math.max(100, (totalSessions * nodeSpacingX) + 100);
+        scrollContainer.style.width = requiredWidth + 'px';
+
+        // Map the data using our new sessions array
+        sessions.forEach((sessionMsgs, index) => {
+            const xPos = 80 + (index * nodeSpacingX); 
+            const yPos = index % 2 === 0 ? 35 : 65;
+            
+            nodesData.push({
+                id: index + 1,
+                date: sessionMsgs[0].date, // Grab the date from the first message of the session
+                messages: sessionMsgs,
+                label: getSummaryWord(sessionMsgs),
+                x: xPos, 
+                y: yPos
+            });
+        });
+
+        let svgHTML = '';
+        for (let i = 0; i < nodesData.length - 1; i++) {
+            const start = nodesData[i];
+            const end = nodesData[i+1];
+            svgHTML += `<line x1="${start.x}" y1="${start.y}%" x2="${end.x}" y2="${end.y}%" stroke="#fff" stroke-width="2" />`;
+        }
+        linesContainer.innerHTML = svgHTML;
+
+        nodesData.forEach(node => {
+            const div = document.createElement('div');
+            div.className = 'graph-node';
+            div.style.left = `${node.x}px`;
+            div.style.top = `${node.y}%`;
+            div.innerHTML = `<span class="node-label">Session ${node.id}</span>${node.label}`;
+            
+            div.onclick = () => openSessionModal(node.id, node.date, node.label, node.messages);
+            
+            nodesContainer.appendChild(div);
+        });
+
+        const themesHTML = Array.from(allThemes).slice(0, 5).map(theme => `<span class="theme-pill">${theme}</span>`).join('');
+        themeTags.innerHTML = themesHTML || '<span class="theme-pill">N/A</span>';
+
+    } catch (error) {
+        console.error("Error drawing graph:", error);
+    }
+}
+function openSessionModal(id, date, label, messages) {
+    document.getElementById('modal-title').innerText = `Session ${id}`;
+    document.getElementById('modal-date').innerText = date;
+    document.getElementById('modal-theme').innerText = label;
+
+    // --- THE SMART EXTRACTIVE SUMMARIZER ---
+    
+    // 1. Filter to only look at what the user typed
+    const userMsgs = messages.filter(m => m.role === 'User').map(m => m.text);
+    let summaryText = "You checked in today but didn't share much. Taking the time to open the app is still a great first step toward building resilience!";
+
+    if (userMsgs.length > 0) {
+        const firstMsg = userMsgs[0];
+        
+        // Find the longest message the user sent (usually holds the most context)
+        const longestMsg = userMsgs.reduce((a, b) => a.length > b.length ? a : b, "");
+        
+        // Clean up the string so it doesn't break the paragraph visually
+        const snippet = longestMsg.length > 90 ? longestMsg.substring(0, 90) + "..." : longestMsg;
+
+        if (userMsgs.length === 1) {
+            summaryText = `In this brief session, you reached out experiencing feelings of ${label}. You noted: "${firstMsg}"`;
+        } else {
+            summaryText = `You started this session dealing with feelings of ${label}. We spent time unpacking this friction, particularly focusing on when you mentioned: "${snippet}" By venting these thoughts, you took a highly positive step toward managing your stress today.`;
+        }
+    }
+
+    // Inject the generated summary into the modal
+    document.getElementById('modal-summary').innerText = summaryText;
+    
+    // Show the modal
+    document.getElementById('session-modal').style.display = 'flex';
+}
+
+function closeSessionModal() {
+    document.getElementById('session-modal').style.display = 'none';
+}
