@@ -508,114 +508,176 @@ function loadInsightsGraph() {
     try {
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-        // 1. NEW LOGIC: Group messages into sessions based on 30-minute time gaps!
+        // 1. Group messages into sessions based on 30-minute gaps
         const sessions = [];
         let currentSession = [];
         let lastTimeObj = null;
 
         history.forEach(msg => {
             if(!msg.date || !msg.time) return;
-            
-            // Combine date and time to calculate the exact gap between messages
             const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
             
-            if (lastTimeObj) {
-                const diffMins = (msgTimeObj - lastTimeObj) / (1000 * 60);
-                // If more than 30 minutes passed, start a new session node
-                if (diffMins > 30) { 
-                    sessions.push(currentSession);
-                    currentSession = [];
-                }
+            if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+                sessions.push(currentSession);
+                currentSession = [];
             }
             currentSession.push(msg);
             lastTimeObj = msgTimeObj;
         });
-        
-        // Push the final session into the array
         if (currentSession.length > 0) sessions.push(currentSession);
 
         const totalSessions = sessions.length;
-        const totalConnections = Math.max(0, totalSessions - 1);
+        const container = document.getElementById('d3-graph-container');
+        if (!container) return;
         
-        const nodesContainer = document.getElementById('graph-nodes');
-        const linesContainer = document.getElementById('graph-lines');
-        const scrollContainer = document.getElementById('graph-scroll-container');
-        const statsSummary = document.getElementById('stats-summary');
-        const themeTags = document.getElementById('theme-tags');
-
-        if (!nodesContainer || !linesContainer || !scrollContainer || !statsSummary || !themeTags) return; 
-
-        linesContainer.innerHTML = ''; 
-        nodesContainer.innerHTML = ''; 
-        statsSummary.innerText = `${totalSessions} Sessions — ${totalConnections} Connections`;
+        container.innerHTML = ''; 
+        document.getElementById('stats-summary').innerText = `${totalSessions} Sessions Logged`;
 
         if (totalSessions === 0) {
-            nodesContainer.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px; font-size: 14px;">Complete a chat session in the Vent Box to generate your insights graph.</p>';
-            themeTags.innerHTML = '<span class="theme-pill">No data yet</span>';
+            container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
             return;
         }
 
-        const allThemes = new Set();
+        // 2. Prepare Data for the D3 Graph Engine
+        const nodes = [];
+        const links = [];
+        const themeSet = new Set();
+
         const getSummaryWord = (messages) => {
             const userTexts = messages.filter(m => m.role === 'User').map(m => m.text);
             const combined = userTexts.join(" ").toLowerCase();
-            const keywords = ["overwhelm", "worried", "concerned", "anxious", "frustrated", "sad", "stressed", "burnout", "harsh", "deadline", "lost"];
-            
-            for (let word of keywords) {
-                if (combined.includes(word)) {
-                    allThemes.add(word);
-                    return word;
-                }
-            }
-            allThemes.add("vented");
+            const keywords = ["overwhelm", "worried", "anxious", "frustrated", "sad", "stressed", "burnout", "harsh", "deadline", "lost"];
+            for (let word of keywords) if (combined.includes(word)) return word;
             return "vented"; 
         };
 
-        const nodesData = [];
-        const nodeSpacingX = 120; 
-        const requiredWidth = Math.max(100, (totalSessions * nodeSpacingX) + 100);
-        scrollContainer.style.width = requiredWidth + 'px';
-
-        // Map the data using our new sessions array
+        // Create Session Nodes & Links
         sessions.forEach((sessionMsgs, index) => {
-            const xPos = 80 + (index * nodeSpacingX); 
-            const yPos = index % 2 === 0 ? 35 : 65;
-            
-            nodesData.push({
-                id: index + 1,
-                date: sessionMsgs[0].date, // Grab the date from the first message of the session
-                messages: sessionMsgs,
-                label: getSummaryWord(sessionMsgs),
-                x: xPos, 
-                y: yPos
-            });
+            const sessionId = `Session ${index + 1}`;
+            const theme = getSummaryWord(sessionMsgs);
+            themeSet.add(theme);
+
+            nodes.push({ id: sessionId, group: 'session', date: sessionMsgs[0].date, theme: theme, messages: sessionMsgs });
+            links.push({ source: sessionId, target: theme }); // Links the session to its theme
         });
 
-        let svgHTML = '';
-        for (let i = 0; i < nodesData.length - 1; i++) {
-            const start = nodesData[i];
-            const end = nodesData[i+1];
-            svgHTML += `<line x1="${start.x}" y1="${start.y}%" x2="${end.x}" y2="${end.y}%" stroke="#fff" stroke-width="2" />`;
+        // Create Theme Nodes (The central hubs)
+        themeSet.forEach(theme => {
+            nodes.push({ id: theme, group: 'theme' });
+        });
+
+       // 3. Setup the D3 Canvas with Zoom & Pan
+        const width = container.clientWidth;
+        const height = container.clientHeight || 400;
+
+        const svg = d3.select("#d3-graph-container")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const g = svg.append("g");
+        
+        // Define the zoom behavior and attach it to the SVG
+        const zoomBehavior = d3.zoom()
+            .scaleExtent([0.3, 4]) // Widened the zoom range slightly for massive graphs
+            .on("zoom", (event) => g.attr("transform", event.transform));
+            
+        svg.call(zoomBehavior);
+
+        //HTML Zoom Buttons
+        d3.select("#zoom-in").on("click", () => {
+            svg.transition().duration(300).call(zoomBehavior.scaleBy, 1.3);
+        });
+        
+        d3.select("#zoom-out").on("click", () => {
+            svg.transition().duration(300).call(zoomBehavior.scaleBy, 0.7);
+        });
+
+        // The Reset View Button
+        d3.select("#zoom-reset").on("click", () => {
+            // Smoothly transitions back to scale 1 and center coordinates
+            svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
+        });
+
+        // 4. Create the Graph Simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(120)) // Distance between nodes
+            .force("charge", d3.forceManyBody().strength(-400)) // Repels nodes so they don't overlap
+            .force("center", d3.forceCenter(width / 2, height / 2)); // Pulls the whole web to the middle
+
+        // 5. Draws the Connecting Lines
+        const link = g.append("g")
+            .selectAll("line")
+            .data(links)
+            .join("line")
+            .attr("stroke", "#3b3c54")
+            .attr("stroke-width", 2)
+            .attr("stroke-opacity", 0.6);
+
+        // 6. Draws the Nodes
+        const node = g.append("g")
+            .selectAll("circle")
+            .data(nodes)
+            .join("circle")
+            .attr("r", d => d.group === 'theme' ? 24 : 14) // Makes themes larger than sessions
+            .attr("fill", d => d.group === 'theme' ? "#a78bfa" : "#1e1e2f")
+            .attr("stroke", d => d.group === 'theme' ? "#fff" : "#a78bfa")
+            .attr("stroke-width", 2)
+            .attr("cursor", "pointer")
+            .call(drag(simulation)); // Enables dragging individual nodes
+
+        // 7. Add Text Labels
+        const labels = g.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .join("text")
+            .text(d => d.id)
+            .attr("font-size", d => d.group === 'theme' ? "14px" : "11px")
+            .attr("font-weight", d => d.group === 'theme' ? "bold" : "normal")
+            .attr("fill", "#e5e7eb")
+            .attr("text-anchor", "middle")
+            .attr("dy", d => d.group === 'theme' ? 40 : 28);
+
+        // 8. Handle Clicks
+        node.on("click", (event, d) => {
+            if (d.group === 'session') {
+                openSessionModal(d.id.replace('Session ', ''), d.date, d.theme, d.messages);
+            }
+        });
+
+        // 9. Updates positions on every frame
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+            node.attr("cx", d => d.x).attr("cy", d => d.y);
+            labels.attr("x", d => d.x).attr("y", d => d.y);
+        });
+
+        // 10. Dragging Logic
+        function drag(simulation) {
+            return d3.drag()
+                .on("start", (event) => {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    event.subject.fx = event.subject.x;
+                    event.subject.fy = event.subject.y;
+                })
+                .on("drag", (event) => {
+                    event.subject.fx = event.x;
+                    event.subject.fy = event.y;
+                })
+                .on("end", (event) => {
+                    if (!event.active) simulation.alphaTarget(0);
+                    event.subject.fx = null;
+                    event.subject.fy = null;
+                });
         }
-        linesContainer.innerHTML = svgHTML;
 
-        nodesData.forEach(node => {
-            const div = document.createElement('div');
-            div.className = 'graph-node';
-            div.style.left = `${node.x}px`;
-            div.style.top = `${node.y}%`;
-            div.innerHTML = `<span class="node-label">Session ${node.id}</span>${node.label}`;
-            
-            div.onclick = () => openSessionModal(node.id, node.date, node.label, node.messages);
-            
-            nodesContainer.appendChild(div);
-        });
-
-        const themesHTML = Array.from(allThemes).slice(0, 5).map(theme => `<span class="theme-pill">${theme}</span>`).join('');
-        themeTags.innerHTML = themesHTML || '<span class="theme-pill">N/A</span>';
+        // Populate bottom theme tags
+        const themesHTML = Array.from(themeSet).slice(0, 5).map(theme => `<span class="theme-tabs">${theme}</span>`).join('');
+        document.getElementById('theme-tags').innerHTML = themesHTML || '<span class="theme-tabs">N/A</span>';
 
     } catch (error) {
-        console.error("Error drawing graph:", error);
+        console.error("Error drawing force graph:", error);
     }
 }
 function openSessionModal(id, date, label, messages) {
@@ -623,7 +685,7 @@ function openSessionModal(id, date, label, messages) {
     document.getElementById('modal-date').innerText = date;
     document.getElementById('modal-theme').innerText = label;
 
-    // --- THE SMART EXTRACTIVE SUMMARIZER ---
+    // --- THE AI SUMMARIZER ---
     
     // 1. Filter to only look at what the user typed
     const userMsgs = messages.filter(m => m.role === 'User').map(m => m.text);
@@ -632,7 +694,7 @@ function openSessionModal(id, date, label, messages) {
     if (userMsgs.length > 0) {
         const firstMsg = userMsgs[0];
         
-        // Find the longest message the user sent (usually holds the most context)
+        // Holds the longest message the user sent
         const longestMsg = userMsgs.reduce((a, b) => a.length > b.length ? a : b, "");
         
         // Clean up the string so it doesn't break the paragraph visually
@@ -645,10 +707,10 @@ function openSessionModal(id, date, label, messages) {
         }
     }
 
-    // Inject the generated summary into the modal
+    //generated summary
     document.getElementById('modal-summary').innerText = summaryText;
-    
-    // Show the modal
+
+    //display summary
     document.getElementById('session-modal').style.display = 'flex';
 }
 

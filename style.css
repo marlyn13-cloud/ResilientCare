@@ -782,59 +782,6 @@ textarea::placeholder {
     position: relative;
 }
 
-#graph-scroll-container {
-    position: relative;
-    min-width: 100%;
-    height: 100%;
-}
-
-#graph-lines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none; /* Lets you click through the lines to the background */
-}
-
-#graph-nodes {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.graph-node {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: #fff;
-    background: #16171d;
-    cursor: pointer;
-    transform: translate(-50%, -50%); /* Centers the node */
-    transition: all 0.2s ease;
-    z-index: 2;
-}
-
-.graph-node:hover {
-    background: #C084FC;
-    border-color: #C084FC;
-    transform: translate(-50%, -50%) scale(1.1);
-}
-
-.node-label {
-    position: absolute;
-    top: -25px;
-    font-size: 12px;
-    color: #9b9a9a;
-    white-space: nowrap;
-}
-
 .insights-bottom-panels {
     display: flex;
     gap: 15px;
@@ -864,7 +811,7 @@ textarea::placeholder {
 }
 
 /* Key Themes: Styles to theme tags */
-.theme-pill {
+.theme-tabs {
     padding: 4px 12px;
     border: 1px solid #fff;
     border-radius: 20px;
@@ -966,7 +913,7 @@ textarea::placeholder {
     margin-bottom: 15px;
 }
 
-/* Individual Inside Cards */
+/* Individual Cards */
 .modal-card {
     background: #16171d;
     border: 1px solid #2a2b36;
@@ -1000,7 +947,7 @@ textarea::placeholder {
     opacity: 0.5; 
 }
 
-.modal-card .theme-pill {
+.modal-card .theme-tabs {
     background: rgba(167, 139, 250, 0.15);
     color: #d8b4fe;
     border: 1px solid rgba(167, 139, 250, 0.3);
@@ -1019,4 +966,42 @@ textarea::placeholder {
     font-size: 14px;
     line-height: 1.6;
     color: #e5e7eb;
+}
+/* Floating Zoom Controls */
+.zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10; 
+}
+
+.zoom-btn {
+    background: #1e1e2f;
+    color: #e5e7eb;
+    border: 1px solid #3b3c54;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    padding: 18px 2px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.zoom-btn:hover {
+    background: #2a2b36;
+    border-color: #a78bfa;
+    color: #a78bfa;
+    transform: scale(1.05);
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
 }
