@@ -557,7 +557,7 @@ function loadInsightsGraph() {
         const themeTags = document.getElementById('theme-tags');
         
         if (statsSummary) statsSummary.innerText = "0 Sessions Logged";
-        if (themeTags) themeTags.innerHTML = '<span class="theme-pill">No data yet</span>';
+        if (themeTags) themeTags.innerHTML = '<span class="theme-tabs">No data yet</span>';
         
         console.log("Graph and history cleared successfully.");
     }
