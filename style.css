@@ -712,7 +712,7 @@ textarea::placeholder {
 }
 
 .starter-btn {
-    background: #1e1e2f; /* Slightly lighter than the background to pop */
+    background: #1e1e2f; 
     color: #e0e0e0;
     border: 1px solid #2a2b36;
     border-radius: 12px;

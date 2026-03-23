@@ -288,7 +288,6 @@ class ResilientCareEngine {
         if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
             const handler = this.intentDatabase[this.state.currentIntent].handler;
             
-            // CRITICAL FIX: Add userInput right here!
             responseText = handler(this.getContext(), this.state.step, userInput); 
             
             finalMode = this.intentDatabase[this.state.currentIntent].autoMode;
@@ -337,16 +336,6 @@ const AI = new ResilientCareEngine();
 // 3. UI, NAVIGATION, AND MENU LOGIC
 // ==========================================
 
-window.toggleMenu = function() {
-    const menu = document.getElementById("inline-menu");
-    const btn = document.querySelector(".openbtn");
-    
-    if (menu) {
-        menu.classList.toggle("expanded");
-        if(btn) btn.classList.toggle("rotated"); // Spins the hamburger icon
-    }
-}
-
 window.sendChip = function(text) {
     // 1. REVEAL THE TEXT BOX
     const inputArea = document.getElementById('chat-input-area');
@@ -359,14 +348,6 @@ window.sendChip = function(text) {
     if (inputElement) {
         inputElement.value = text;
         inputElement.focus(); 
-    }
-    
-    // 3. AUTO-CLOSE THE MENU
-    const menu = document.getElementById("inline-menu");
-    const btn = document.querySelector(".openbtn");
-    if (menu && menu.classList.contains("expanded")) {
-        menu.classList.remove("expanded");
-        if(btn) btn.classList.remove("rotated");
     }
 }
 
@@ -386,20 +367,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if(dateEl) {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         dateEl.innerText = new Date().toLocaleDateString('en-US', options);
-    }
-
-    // 2. Setup Collapsible Menus in Sidebar
-    const collapsibles = document.getElementsByClassName("collapsible");
-    for (let i = 0; i < collapsibles.length; i++) {
-        collapsibles[i].addEventListener("click", function() {
-            this.classList.toggle("active-collapse");
-            let content = this.nextElementSibling;
-            if (content.style.maxHeight && content.style.maxHeight !== "0px") {
-                content.style.maxHeight = "0px";
-            } else {
-                content.style.maxHeight = content.scrollHeight + "px";
-            }
-        });
     }
 
     // 3. Vent Button Hold Logic
@@ -439,7 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ventBtn.addEventListener('mouseup', cancelHold);
         ventBtn.addEventListener('mouseleave', cancelHold);
         ventBtn.addEventListener('touchend', cancelHold);
-    }
+    };
 });
 
 // 4. VENT BOX CHAT & AUTO-SAVE LOGIC
