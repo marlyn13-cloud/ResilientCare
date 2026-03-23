@@ -8,57 +8,66 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-    
     <div class="app-single-column">
         
         <nav class="vent-nav">
-            <button class="openbtn" onclick="toggleMenu()">☰</button>
-        <nav class="nav-left">
-            <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
-        </nav>
-            <span class="nav-title"> Vent Box</span>
-            <span id="save-indicator" class="auto-save-text">Auto-saved ✓</span>
-        </nav>
-
-        <div id="inline-menu" class="inline-menu-content">
-            <div class="dark-panel-inner">
-                <div class="friction-categories">
-                    <div class="cat-label" style="color: var(--text-dim);">Quick starters</div>
-                    
-                    <button class="cat-btn active" onclick="sendChip('I got harsh feedback on my assignment and I feel crushed.')">
-                        <span class="cat-dot" style="background:#d4924a"></span>Harsh grading
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I\'m so confused by this assignment. I don\'t even know where to start.')">
-                        <span class="cat-dot" style="background:#4ab8a0"></span>Confusing material
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I\'m completely burned out. I don\'t know why I\'m even in this major.')">
-                        <span class="cat-dot" style="background:#7a7872"></span>Burnout &amp; doubt
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I feel like everyone else gets it and I\'m the only one lost.')">
-                        <span class="cat-dot" style="background:#8a6faf"></span>Imposter syndrome
-                    </button>
-                    <button class="cat-btn" onclick="sendChip('I have three deadlines this week and I\'m completely overwhelmed.')">
-                        <span class="cat-dot" style="background:#cc8855"></span>Deadline overload
-                    </button>
-                </div>
-
-                <div class="sidebar-footer">
-                    <div class="cat-label" style="margin-bottom:8px; color: var(--text-dim);">How are you feeling?</div>
-                    <div class="mood-strip">
-                        <button class="mood-btn" onclick="sendChip('I feel frustrated. How can I deal with this frustration?')" title="Frustrated">😤</button>
-                        <button class="mood-btn" onclick="sendChip('I feel sad. What are some steps to cope?')" title="Sad">😔</button>
-                        <button class="mood-btn" onclick="sendChip('I feel anxious. How can I manage this anxiety?')" title="Anxious">😰</button>
-                        <button class="mood-btn" onclick="sendChip('I feel stressed so much coursework has to get done.')" title="Stressed">😐</button>
-                    </div>
-                </div>
+            <div class="nav-left">
+                <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
             </div>
-        </div>
+            
+            <span class="nav-title">Vent Box</span>
+            
+            <div class="nav-right">
+                <span id="save-indicator" class="auto-save-text">Auto-saved ✓</span>
+            </div>
+        </nav>
 
         <main class="vent-main">
             <span class="hero-emoji">:)</span>
             <h2>Welcome to your safe space</h2>
-            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Open the menu for a quick topic starter or simply click on an emoji to start a conversation.
-            </p>
+            <p style="font-size: 15px; margin-bottom: 20px;">I'm here to listen. Click a topic starter to get started.</p>
+            
+            <div class="quick-starters" id="quick-starters-grid">
+                <button class="starter-btn" onclick="sendChip('I feel sad. What are some steps to cope?')">
+                    <span class="btn-emoji">😢</span> Sadness
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I feel frustrated. How can I deal with this frustration?')">
+                    <span class="btn-emoji">😤</span> Frustration
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I feel anxious. How can I manage this anxiety?')">
+                    <span class="btn-emoji">😰</span> Anxiety
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I feel stressed so much coursework has to get done.')">
+                    <span class="btn-emoji">📚</span> Coursework Stress
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I missed an exam')">
+                    <span class="btn-emoji">🚨</span> Missed Exam
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I\'m completely burned out. I don\'t know why I\'m even in this major.')">
+                    <span class="btn-emoji">🔋</span> Burnout
+                </button>
+
+                <button class="starter-btn" onclick="sendChip('Everyone else gets it but me.')">
+                    <span class="btn-emoji">🎭</span> Imposter Syndrome
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('Too many deadlines at once.')">
+                    <span class="btn-emoji">⏳</span> Deadline Overload
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I\'m so lost on this assignment.')">
+                    <span class="btn-emoji">😵‍💫</span> Confusing Material
+                </button>
+                
+                <button class="starter-btn" onclick="sendChip('I got a bad grade and I feel crushed.')">
+                    <span class="btn-emoji">📉</span> Harsh Grading
+                </button>
+            </div>
         </main>
 
         <div class="input-area" id="chat-input-area" style="display: none;">

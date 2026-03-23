@@ -84,15 +84,18 @@ html, body {
     gap: 15px;
 }
 
-/* Tweaks to make your buttons look perfect inside the new menu */
 .vent-nav {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* Pushes left and right sides apart */
     padding: 15px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
+    background: #16171d;
+    z-index: 10;
+    border-bottom: 1px solid #0e0f13;
+    position: relative; 
+    width: 100%; /* FORCES it to stretch the whole screen */
+    box-sizing: border-box; /* Keeps padding from breaking the width */
 }
 
 .openbtn {
@@ -339,11 +342,12 @@ body {
     position: absolute; 
     left: 50%; 
     transform: translateX(-50%);
+    white-space: nowrap;
 }
 .nav-left {
-    display: flex; /* This forces exactly 20px of safe space between the two buttons */
-    position: absolute;
-    left: 100px; /* Aligns the left button with the nav padding */
+    display: flex;
+    align-items: center;
+    min-width: 80px; /* Gives the left side a solid footprint */
 }
 /* ── Main Chat ── */
 .chat-area {
@@ -497,8 +501,22 @@ body {
 .icon-btn:active {
     transform: scale(0.9); /* Feedback when pressing */
 }
+.nav-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 80px; 
+}
+
+.save-indicator {
+    font-size: 14px;
+    color: #9CA3AF;
+    font-weight: 500;
+    transition: color 0.3s ease; 
+}
+
 .auto-save-text {
-    font-size: 13px;
+    font-size: 14px;
     color: #9CA3AF; 
     font-weight: 500;
     font-style: italic;
@@ -675,42 +693,42 @@ textarea::placeholder {
     background-color: #f0f0f0;
 }
 
-/* HAMBURGER MENU (Quick Starters)
-   ========================================= */
-
-/* Make the label a clickable button */
-.collapsible {
-    cursor: pointer;
+.quick-starters {
+    display: grid;
+    /* Automatically creates columns that fit the screen */
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 10px;
     width: 100%;
-    background: none;
-    border: none;
+    max-width: 600px;
+    margin: 0 auto 30px auto; 
+}
+
+.starter-btn {
+    background: #1e1e2f; /* Slightly lighter than the background to pop */
+    color: #e0e0e0;
+    border: 1px solid #2a2b36;
+    border-radius: 12px;
+    padding: 15px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-emoji {
+    font-size: 26px; 
+}
+
+/* Hover & Tap Effects */
+.starter-btn:hover, .starter-btn:focus {
+    background: #2a2b36;
+    border-color: #C084FC; 
+    transform: translateY(-2px); 
     outline: none;
-    transition: color 0.2s ease;
-}
-
-.collapsible:hover {
-    color: var(--text); /* Brightens on hover */
-}
-
-/* The arrow animation */
-.collapsible .arrow {
-    font-size: 10px;
-    transition: transform 0.3s ease;
-}
-
-/* Rotates the arrow pointing up when the menu is closed */
-.collapsible.active-collapse .arrow {
-    transform: rotate(-90deg);
-}
-
-.collapsible-content {
-    padding: 0;
-    max-height: 500px; /* Starts open */
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
 }
 
 /*  transparent buttons */
