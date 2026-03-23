@@ -772,6 +772,24 @@ textarea::placeholder {
     height: calc(100vh - 80px);
     box-sizing: border-box;
 }
+/* Clear Data Button */
+.btn-clear {
+    background: transparent;
+    border: 1px solid #3b3c54;
+    color: #9ca3af;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-clear:hover {
+    border-color: #ef4444;
+    color: #ef4444; /*  warning text */
+    background: rgba(239, 68, 68, 0.1);
+}
 
 .graph-area {
     flex: 1;

@@ -508,7 +508,7 @@ function loadInsightsGraph() {
     try {
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-        // 1. Group messages into sessions based on 30-minute gaps
+        // 1. Group messages into sessions
         const sessions = [];
         let currentSession = [];
         let lastTimeObj = null;
@@ -537,6 +537,31 @@ function loadInsightsGraph() {
             container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
             return;
         }
+        //CLEAR GRAPH DATA 
+    window.clearGraphData = function() {
+    // 1. Safety Check: Ask the user to confirm deletion
+    const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
+    
+    if (isConfirmed) {
+        // 2. Wipe the local memory
+        localStorage.removeItem('resilientCareHistory');
+        
+        // 3. Clears the Graph 
+        const container = document.getElementById('d3-graph-container');
+        if (container) {
+            container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
+        }
+
+        // 4. Reset the Bottom Stats
+        const statsSummary = document.getElementById('stats-summary');
+        const themeTags = document.getElementById('theme-tags');
+        
+        if (statsSummary) statsSummary.innerText = "0 Sessions Logged";
+        if (themeTags) themeTags.innerHTML = '<span class="theme-pill">No data yet</span>';
+        
+        console.log("Graph and history cleared successfully.");
+    }
+};
         // 2. Prepare Data for the D3 Graph Engine
         const nodes = [];
         const links = [];
