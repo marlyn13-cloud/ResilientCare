@@ -810,7 +810,7 @@ textarea::placeholder {
     gap: 8px;
 }
 
-/* Key Themes: Styles to theme tags */
+/* Styles to theme tabs in key themes box */
 .theme-tabs {
     padding: 4px 12px;
     border: 1px solid #fff;

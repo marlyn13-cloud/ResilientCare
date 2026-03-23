@@ -333,7 +333,7 @@ const AI = new ResilientCareEngine();
 
 //END OF AI LOGIC
 
-// 3. UI, NAVIGATION, AND MENU LOGIC
+// 3. UI, NAVIGATION, VENT BOX
 // ==========================================
 
 window.sendChip = function(text) {
@@ -537,7 +537,6 @@ function loadInsightsGraph() {
             container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
             return;
         }
-
         // 2. Prepare Data for the D3 Graph Engine
         const nodes = [];
         const links = [];
@@ -561,12 +560,37 @@ function loadInsightsGraph() {
             links.push({ source: sessionId, target: theme }); // Links the session to its theme
         });
 
-        // Create Theme Nodes (The central hubs)
+        // Creates Theme Nodes
         themeSet.forEach(theme => {
             nodes.push({ id: theme, group: 'theme' });
         });
 
-       // 3. Setup the D3 Canvas with Zoom & Pan
+        //THEME CONNECTIONS
+        const relatedThemes = {
+            "overwhelm": ["stressed", "anxious", "deadline", "burnout"],
+            "stressed": ["overwhelm", "deadline", "burnout", "worried"],
+            "anxious": ["overwhelm", "worried", "concerned"],
+            "frustrated": ["harsh", "lost", "sad"],
+            "sad": ["frustrated", "lost", "burnout"],
+            "burnout": ["overwhelm", "stressed", "sad"],
+            "lost": ["frustrated", "sad", "anxious"]
+        };
+
+        const themeArray = Array.from(themeSet);
+        for (let i = 0; i < themeArray.length; i++) {
+            for (let j = i + 1; j < themeArray.length; j++) {
+                const t1 = themeArray[i];
+                const t2 = themeArray[j];
+                
+                if ((relatedThemes[t1] && relatedThemes[t1].includes(t2)) || 
+                    (relatedThemes[t2] && relatedThemes[t2].includes(t1))) {
+                    links.push({ source: t1, target: t2, type: 'theme-link' }); // Creates the invisible elastic band
+                }
+            }
+        }
+
+        // 3. Setup the D3 Canvas with Zoom & Pan
+        // ------------------------------------
         const width = container.clientWidth;
         const height = container.clientHeight || 400;
 
@@ -577,14 +601,12 @@ function loadInsightsGraph() {
 
         const g = svg.append("g");
         
-        // Define the zoom behavior and attach it to the SVG
         const zoomBehavior = d3.zoom()
-            .scaleExtent([0.3, 4]) // Widened the zoom range slightly for massive graphs
+            .scaleExtent([0.3, 4]) 
             .on("zoom", (event) => g.attr("transform", event.transform));
             
         svg.call(zoomBehavior);
 
-        //HTML Zoom Buttons
         d3.select("#zoom-in").on("click", () => {
             svg.transition().duration(300).call(zoomBehavior.scaleBy, 1.3);
         });
@@ -593,26 +615,26 @@ function loadInsightsGraph() {
             svg.transition().duration(300).call(zoomBehavior.scaleBy, 0.7);
         });
 
-        // The Reset View Button
         d3.select("#zoom-reset").on("click", () => {
-            // Smoothly transitions back to scale 1 and center coordinates
             svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
         });
 
-        // 4. Create the Graph Simulation
+        // 4. Creates the graph
         const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(120)) // Distance between nodes
-            .force("charge", d3.forceManyBody().strength(-400)) // Repels nodes so they don't overlap
-            .force("center", d3.forceCenter(width / 2, height / 2)); // Pulls the whole web to the middle
+            .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.type === 'theme-link' ? 250 : 100)) 
+            .force("charge", d3.forceManyBody().strength(-400)) 
+            .force("center", d3.forceCenter(width / 2, height / 2)); 
 
-        // 5. Draws the Connecting Lines
+        // 5. Draw the Connecting Lines
         const link = g.append("g")
             .selectAll("line")
             .data(links)
             .join("line")
-            .attr("stroke", "#3b3c54")
-            .attr("stroke-width", 2)
-            .attr("stroke-opacity", 0.6);
+            //theme links as dashed purple lines, and session links as solid gray lines
+            .attr("stroke", d => d.type === 'theme-link' ? "#a78bfa" : "#3b3c54")
+            .attr("stroke-width", d => d.type === 'theme-link' ? 1.5 : 2)
+            .attr("stroke-dasharray", d => d.type === 'theme-link' ? "6,6" : "none")
+            .attr("stroke-opacity", d => d.type === 'theme-link' ? 0.4 : 0.6);
 
         // 6. Draws the Nodes
         const node = g.append("g")
@@ -672,7 +694,7 @@ function loadInsightsGraph() {
                 });
         }
 
-        // Populate bottom theme tags
+        // bottom theme tags
         const themesHTML = Array.from(themeSet).slice(0, 5).map(theme => `<span class="theme-tabs">${theme}</span>`).join('');
         document.getElementById('theme-tags').innerHTML = themesHTML || '<span class="theme-tabs">N/A</span>';
 
@@ -685,7 +707,7 @@ function openSessionModal(id, date, label, messages) {
     document.getElementById('modal-date').innerText = date;
     document.getElementById('modal-theme').innerText = label;
 
-    // --- THE AI SUMMARIZER ---
+    //THE AI SUMMARIZER
     
     // 1. Filter to only look at what the user typed
     const userMsgs = messages.filter(m => m.role === 'User').map(m => m.text);
@@ -717,3 +739,9 @@ function openSessionModal(id, date, label, messages) {
 function closeSessionModal() {
     document.getElementById('session-modal').style.display = 'none';
 }
+//END OF INSIGHTS PAGE
+//====================
+
+//START OF HISTORY PAGE
+//--FURTHER IMPLEMENTATION NEDED
+//END OF HISTORY PAGE
