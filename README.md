@@ -3,7 +3,6 @@ In progress AI project
 
 #AI BOT IS MADE
 
-- Implement a feature where the text box only appears after the user clicks on a quick starter conversation
 - Implement view insights tab
 - Implement view history tab
 - Implement settings tab
