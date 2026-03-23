@@ -347,15 +347,21 @@ window.toggleMenu = function() {
     }
 }
 
-// Drops starter text into the chat box 
 window.sendChip = function(text) {
+    // 1. REVEAL THE TEXT BOX
+    const inputArea = document.getElementById('chat-input-area');
+    if (inputArea) {
+        inputArea.style.display = 'flex'; 
+    }
+
+    // 2. DROP THE TEXT IN THE TEXT BOX
     const inputElement = document.getElementById('vent-input');
     if (inputElement) {
         inputElement.value = text;
         inputElement.focus(); 
     }
     
-    // Auto-close the menu so the user can see the chat
+    // 3. AUTO-CLOSE THE MENU
     const menu = document.getElementById("inline-menu");
     const btn = document.querySelector(".openbtn");
     if (menu && menu.classList.contains("expanded")) {
