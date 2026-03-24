@@ -688,7 +688,7 @@ function loadInsightsGraph() {
         // 8. Handle Clicks
         node.on("click", (event, d) => {
             if (d.group === 'session') {
-                openSessionModal(d.id.replace('Session ', ''), d.date, d.theme, d.messages);
+                openSessionModule(d.id.replace('Session ', ''), d.date, d.theme, d.messages);
             }
         });
 
@@ -727,10 +727,10 @@ function loadInsightsGraph() {
         console.error("Error drawing force graph:", error);
     }
 }
-function openSessionModal(id, date, label, messages) {
-    document.getElementById('modal-title').innerText = `Session ${id}`;
-    document.getElementById('modal-date').innerText = date;
-    document.getElementById('modal-theme').innerText = label;
+function openSessionModule(id, date, label, messages) {
+    document.getElementById('module-title').innerText = `Session ${id}`;
+    document.getElementById('module-date').innerText = date;
+    document.getElementById('module-theme').innerText = label;
 
     //THE AI SUMMARIZER
     
@@ -755,14 +755,14 @@ function openSessionModal(id, date, label, messages) {
     }
 
     //generated summary
-    document.getElementById('modal-summary').innerText = summaryText;
+    document.getElementById('module-summary').innerText = summaryText;
 
     //display summary
-    document.getElementById('session-modal').style.display = 'flex';
+    document.getElementById('session-module').style.display = 'flex';
 }
 
-function closeSessionModal() {
-    document.getElementById('session-modal').style.display = 'none';
+function closeSessionModule() {
+    document.getElementById('session-module').style.display = 'none';
 }
 //END OF INSIGHTS PAGE
 //====================
