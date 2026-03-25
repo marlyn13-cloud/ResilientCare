@@ -1025,3 +1025,55 @@ textarea::placeholder {
 .zoom-btn:active {
     transform: scale(0.95);
 }
+
+.history-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    height: calc(100vh - 80px);
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.session-history-card {
+    background: #16171d;
+    border: 1px solid #2a2b36;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.session-history-card:hover {
+    background: #1e1e2f;
+    border-color: #a78bfa;
+    transform: translateX(5px); /* Slides slightly to the right on hover */
+}
+.card-info{
+    max-width: 600px;
+    height: 80vh; /* Takes up most of the screen */
+    display: flex;
+    flex-direction: column;
+}
+
+.card-info-body{
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.new-session-btn{
+    display: flex;
+    transition: all 0.2s ease;
+    padding: 6px 12px;
+    cursor: pointer;
+}

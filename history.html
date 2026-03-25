@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
 </head>
-<body>
+<body onload="loadHistoryPage()">
 <div class="app-single-column">
         
         <nav class="vent-nav">
@@ -16,5 +16,20 @@
             </div>
             <span class="nav-title">History Page</span>
         </nav>
+    <div class ="history-container" id="history-feed">
+        <div class="nav-history" style="min-width: 80px;">
+            <button class="btn-clear" onclick="clearGraphData()">Clear History</button>
+            </div> 
+        <div class="new-session-btn" style="min-width: 80px;">
+            <button class="btn-create" onclick="createNewSession()">+ Start New Session</button>
+            </div> 
+        <div id="session-history-card" class="session-card" style="display: none;">
+            <div class="card-info">
+                <p> View Session Details: </p>
+                <p> Messages: </p>
+            <button class="close-btn" onclick="hideSessionDetails()">×</button>
+            <div class="card-info-body" id="card-info-body">
+            </div>
+        </div>
     </div>
 </body>

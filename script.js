@@ -768,5 +768,89 @@ function closeSessionModule() {
 //====================
 
 //START OF HISTORY PAGE
-//--FURTHER IMPLEMENTATION NEDED
+//CLEAR GRAPH DATA 
+// ==========================================
+// 6. HISTORY PAGE LOGIC
+// ==========================================
+
+function loadHistoryPage() {
+    const feedContainer = document.getElementById('history-feed');
+    if (!feedContainer) return;
+
+    const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
+
+    // 1. Group messages into sessions (30-minute gap rule)
+    const sessions = [];
+    let currentSession = [];
+    let lastTimeObj = null;
+
+    history.forEach(msg => {
+        if(!msg.date || !msg.time) return;
+        const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
+        
+        if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+            sessions.push(currentSession);
+            currentSession = [];
+        }
+        currentSession.push(msg);
+        lastTimeObj = msgTimeObj;
+    });
+    if (currentSession.length > 0) sessions.push(currentSession);
+
+    // 2. Handle Empty State
+    if (sessions.length === 0) {
+        feedContainer.innerHTML = '<p style="color:#9b9a9a; text-align:center; margin-top:50px;">No session history found. Start venting to see your records here!</p>';
+        return;
+    }
+
+    // 3. Reverse the array so the NEWEST sessions are at the top
+    sessions.reverse();
+    feedContainer.innerHTML = '';
+
+    // 4. Generate the HTML Cards
+    sessions.forEach((sessionMsgs, index) => {
+        // Find the "real" session number (since we reversed the array)
+        const sessionNumber = sessions.length - index; 
+        const date = sessionMsgs[0].date;
+        const time = sessionMsgs[0].time;
+        const totalMessages = sessionMsgs.length;
+
+        const card = document.createElement('div');
+        card.className = 'session-history-card';
+        card.innerHTML = `
+            <div class="history-card-left">
+                <h4>Session ${sessionNumber}</h4>
+                <p><span>📅 ${date}</span> <span>⏰ ${time}</span> <span>💬 ${totalMessages} messages</span></p>
+            </div>
+            <div class="history-card-right">➔</div>
+        `;
+
+        // Pass the messages array to the modal when clicked
+        card.onclick = () => openCardInfo(`Session ${sessionNumber} - ${date}`, sessionMsgs);
+        
+        feedContainer.appendChild(card);
+    });
+}
+
+function openCardInfo(title, messages) {
+    document.getElementById('card-info').innerText = title;
+    
+    const body = document.getElementById('card-info-body');
+    body.innerHTML = ''; // Clear old chat
+
+    // Render the chat bubbles
+    messages.forEach(msg => {
+        const bubble = document.createElement('div');
+        // Re-use your existing Vent Box chat bubble classes!
+        bubble.className = msg.role === 'User' ? 'user-message-bubble' : 'ai-message-bubble';
+        bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
+        body.appendChild(bubble);
+    });
+
+    document.getElementById('card-info-body').style.display = 'flex';
+}
+
+function closeTranscriptModal() {
+    document.getElementById('card-info-body').style.display = 'none';
+}
 //END OF HISTORY PAGE
