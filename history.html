@@ -16,12 +16,15 @@
                 <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
             </div>
             <span class="nav-title">History</span>
-            <div class="nav-right" style="min-width: 80px;"></div>
+            
+            <div class="nav-right" style="min-width: 80px; display: flex; justify-content: flex-end;">
+                <button class="btn-clear" onclick="clearHistoryData()">Clear</button>
+            </div>
         </nav>
 
         <div class="history-actions" style="max-width: 800px; margin: 0 auto; padding: 20px 20px 0; display: flex; justify-content: space-between; width: 100%; box-sizing: border-box;">
-            <button class="btn-clear" onclick="clearHistoryData()">Clear History</button>
             <button class="btn-create" onclick="window.location.href='vent.html'">+ Start New Session</button>
+            <button class="btn-view-insights" onclick="window.location.href='insights.html'">View Insights ➔</button>
         </div> 
 
         <div class="history-container" id="history-feed">
