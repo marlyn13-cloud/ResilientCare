@@ -517,7 +517,7 @@ function loadInsightsGraph() {
             if(!msg.date || !msg.time) return;
             const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
             
-            if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+            if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 1) {
                 sessions.push(currentSession);
                 currentSession = [];
             }
@@ -767,11 +767,6 @@ function closeSessionModule() {
 //END OF INSIGHTS PAGE
 //====================
 
-//START OF HISTORY PAGE
-//CLEAR GRAPH DATA 
-// ==========================================
-// 6. HISTORY PAGE LOGIC
-// ==========================================
 // ==========================================
 // 6. HISTORY PAGE LOGIC
 // ==========================================
@@ -791,7 +786,7 @@ function loadHistoryPage() {
         if(!msg.date || !msg.time) return;
         const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
         
-        if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+        if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 1) {
             sessions.push(currentSession);
             currentSession = [];
         }
