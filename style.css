@@ -23,6 +23,7 @@
   --red: #cc6060;
   --radius: 14px;
   --radius-sm: 8px;
+  --primary-accent: #a78bfa;
 }
  
 html, body {
@@ -1273,4 +1274,129 @@ textarea::placeholder {
     background: #2a2b36;
     color: #a78bfa;
     border-color: #a78bfa;
+}
+
+/* 7. SETTINGS PAGE 
+/* ========================================== */
+.settings-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.settings-card {
+    background: #16171d;
+    border: 1px solid #2a2b36;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.settings-card-title {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Theme Buttons */
+.theme-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.theme-btn {
+    background: transparent;
+    border: 1px solid #3b3c54;
+    color: #9ca3af;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+    background: #1e1e2f;
+}
+
+.theme-btn.active-theme {
+    border-color: var(--primary-accent);
+    color: var(--primary-accent);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Toggle Switch row */
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #e5e7eb;
+    font-size: 14px;
+}
+
+.settings-text {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #3b3c54;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-accent);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.slider.round { 
+    border-radius: 24px; 
+}
+.slider.round:before { 
+    border-radius: 50%; 
 }

@@ -883,3 +883,64 @@ function clearHistoryData() {
         loadHistoryPage(); // Instantly reloads the page to show the "No history" message
     }
 }
+// ==========================================
+// 7. SETTINGS PAGE LOGIC
+// ==========================================
+
+const themes = {
+    blue: { color: "#60a5fa", label: "BLUE" },
+    pink: { color: "#f472b6", label: "Pink" },
+    green: { color: "#34d399", label: "Green" },
+    purple: { color: "#a78bfa", label: "Purple" }
+};
+
+function loadSettings() {
+    // 1. Load Notifications State
+    const reminderToggle = document.getElementById('daily-reminder-toggle');
+    if (reminderToggle) {
+        const isEnabled = localStorage.getItem('dailyReminder') === 'true';
+        reminderToggle.checked = isEnabled;
+    }
+
+    // 2. Load Theme State
+    const currentTheme = localStorage.getItem('appTheme') || 'pink';
+    updateThemeUI(currentTheme);
+}
+
+function toggleReminder() {
+    const toggle = document.getElementById('daily-reminder-toggle');
+    localStorage.setItem('dailyReminder', toggle.checked);
+}
+
+function setTheme(themeName) {
+    localStorage.setItem('appTheme', themeName);
+    updateThemeUI(themeName);
+}
+
+function updateThemeUI(activeTheme) {
+    // Reset all buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.remove('active-theme');
+        const baseId = btn.id.replace('theme-', '');
+        if (themes[baseId]) btn.innerText = themes[baseId].label;
+    });
+
+    // Highlight the selected button and add the checkmark
+    const activeBtn = document.getElementById(`theme-${activeTheme}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active-theme');
+        activeBtn.innerText = themes[activeTheme].label + " ✓";
+    }
+    
+    //new color into the CSS root variables!
+    if (themes[activeTheme]) {
+        document.documentElement.style.setProperty('--primary-accent', themes[activeTheme].color);
+    }
+}
+
+// settings load automatically when the page is opened
+document.addEventListener("DOMContentLoaded", () => {
+    if(document.getElementById('daily-reminder-toggle')) {
+        loadSettings();
+    }
+});
