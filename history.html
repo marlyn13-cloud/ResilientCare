@@ -5,31 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>History Page - ResilientCare</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 <body onload="loadHistoryPage()">
-<div class="app-single-column">
+    <div class="app-single-column">
         
         <nav class="vent-nav">
             <div class="nav-left">
                 <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
             </div>
-            <span class="nav-title">History Page</span>
+            <span class="nav-title">History</span>
+            <div class="nav-right" style="min-width: 80px;"></div>
         </nav>
-    <div class ="history-container" id="history-feed">
-        <div class="nav-history" style="min-width: 80px;">
-            <button class="btn-clear" onclick="clearGraphData()">Clear History</button>
-            </div> 
-        <div class="new-session-btn" style="min-width: 80px;">
-            <button class="btn-create" onclick="createNewSession()">+ Start New Session</button>
-            </div> 
-        <div id="session-history-card" class="session-card" style="display: none;">
-            <div class="card-info">
-                <p> View Session Details: </p>
-                <p> Messages: </p>
-            <button class="close-btn" onclick="hideSessionDetails()">×</button>
-            <div class="card-info-body" id="card-info-body">
+
+        <div class="history-actions" style="max-width: 800px; margin: 0 auto; padding: 20px 20px 0; display: flex; justify-content: space-between; width: 100%; box-sizing: border-box;">
+            <button class="btn-clear" onclick="clearHistoryData()">Clear History</button>
+            <button class="btn-create" onclick="window.location.href='vent.html'">+ Start New Session</button>
+        </div> 
+
+        <div class="history-container" id="history-feed">
+            </div>
+
+        <div id="session-modal-overlay" class="modal-overlay" style="display: none;">
+            <div class="modal-content card-info">
+                <div class="modal-header">
+                    <h3 id="card-info-title">Session Details</h3>
+                    <button class="close-modal-btn" onclick="hideSessionDetails()">✕</button>
+                </div>
+                <div class="card-info-body" id="card-info-body">
+                    </div>
             </div>
         </div>
+
     </div>
 </body>
+</html>

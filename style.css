@@ -1027,7 +1027,7 @@ textarea::placeholder {
 }
 
 .history-container {
-    padding: 20px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1043,12 +1043,8 @@ textarea::placeholder {
     background: #16171d;
     border: 1px solid #2a2b36;
     border-radius: 12px;
-    padding: 20px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 12px;
+    position: relative;
 }
 
 .session-history-card:hover {
@@ -1057,10 +1053,11 @@ textarea::placeholder {
     transform: translateX(5px); /* Slides slightly to the right on hover */
 }
 .card-info{
-    max-width: 600px;
-    height: 80vh; /* Takes up most of the screen */
-    display: flex;
-    flex-direction: column;
+    background: #16171d;
+    border: 1px solid #2a2b36;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
 }
 
 .card-info-body{
@@ -1070,10 +1067,69 @@ textarea::placeholder {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    background: #16171d;
+    border: 1px solid #2a2b36;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
 }
-.new-session-btn{
+.history-card-right{
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.btn-create{
+    background: transparent;
+    border: 2px solid #3b3c54;
+    border-radius: 8%;
+    color: #9b9a9a;
+    width: 90px;
+    height: 55px;
     display: flex;
-    transition: all 0.2s ease;
-    padding: 6px 12px;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-create:hover {
+    border-color: #6acaf7;
+    color: #6acaf7; /*  warning text */
+    background: rgba(106, 202, 247, 0.1);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between; /* Pushes title left, button right */
+    align-items: center; /* Vertically centers them */
+    border-bottom: 1px solid #2a2b36;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+.close-modal-btn {
+    background: transparent;
+    border: 1px solid #3b3c54;
+    border-radius: 50%;
+    color: #9b9a9a;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+    background: #2a2b36;
+    color: #a78bfa;
+    border-color: #a78bfa;
 }

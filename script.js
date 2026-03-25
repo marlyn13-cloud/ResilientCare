@@ -772,6 +772,9 @@ function closeSessionModule() {
 // ==========================================
 // 6. HISTORY PAGE LOGIC
 // ==========================================
+// ==========================================
+// 6. HISTORY PAGE LOGIC
+// ==========================================
 
 function loadHistoryPage() {
     const feedContainer = document.getElementById('history-feed');
@@ -803,13 +806,12 @@ function loadHistoryPage() {
         return;
     }
 
-    // 3. Reverse the array so the NEWEST sessions are at the top
+    // 3. Reverse the array so NEWEST sessions are at the top
     sessions.reverse();
     feedContainer.innerHTML = '';
 
     // 4. Generate the HTML Cards
     sessions.forEach((sessionMsgs, index) => {
-        // Find the "real" session number (since we reversed the array)
         const sessionNumber = sessions.length - index; 
         const date = sessionMsgs[0].date;
         const time = sessionMsgs[0].time;
@@ -820,20 +822,19 @@ function loadHistoryPage() {
         card.innerHTML = `
             <div class="history-card-left">
                 <h4>Session ${sessionNumber}</h4>
-                <p><span>📅 ${date}</span> <span>⏰ ${time}</span> <span>💬 ${totalMessages} messages</span></p>
+                <p>📅 ${date} &nbsp;•&nbsp; ⏰ ${time} &nbsp;•&nbsp; 💬 ${totalMessages} messages</p>
             </div>
-            <div class="history-card-right">➔</div>
+            <div class="history-card-right">Click to View Session Details</div>
         `;
 
-        // Pass the messages array to the modal when clicked
+        // Pass data to modal
         card.onclick = () => openCardInfo(`Session ${sessionNumber} - ${date}`, sessionMsgs);
-        
         feedContainer.appendChild(card);
     });
 }
 
 function openCardInfo(title, messages) {
-    document.getElementById('card-info').innerText = title;
+    document.getElementById('card-info-title').innerText = title;
     
     const body = document.getElementById('card-info-body');
     body.innerHTML = ''; // Clear old chat
@@ -841,16 +842,22 @@ function openCardInfo(title, messages) {
     // Render the chat bubbles
     messages.forEach(msg => {
         const bubble = document.createElement('div');
-        // Re-use your existing Vent Box chat bubble classes!
         bubble.className = msg.role === 'User' ? 'user-message-bubble' : 'ai-message-bubble';
         bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
         body.appendChild(bubble);
     });
 
-    document.getElementById('card-info-body').style.display = 'flex';
+    document.getElementById('session-modal-overlay').style.display = 'flex';
 }
 
-function closeTranscriptModal() {
-    document.getElementById('card-info-body').style.display = 'none';
+function hideSessionDetails() {
+    document.getElementById('session-modal-overlay').style.display = 'none';
 }
-//END OF HISTORY PAGE
+
+function clearHistoryData() {
+    const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
+    if (isConfirmed) {
+        localStorage.removeItem('resilientCareHistory');
+        loadHistoryPage(); // Instantly reloads the page to show the "No history" message
+    }
+}
