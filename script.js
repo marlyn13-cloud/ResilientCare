@@ -539,11 +539,11 @@ function loadInsightsGraph() {
         }
         //CLEAR GRAPH DATA 
     window.clearGraphData = function() {
-    // 1. Safety Check: Ask the user to confirm deletion
+    // 1. Ask the user to confirm deletion
     const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
     
     if (isConfirmed) {
-        // 2. Wipe the local memory
+        // 2. Wipes the local memory
         localStorage.removeItem('resilientCareHistory');
         
         // 3. Clears the Graph 
@@ -562,7 +562,7 @@ function loadInsightsGraph() {
         console.log("Graph and history cleared successfully.");
     }
 };
-        // 2. Prepare Data for the D3 Graph Engine
+        // 2. Prepares Data for the D3 Graph Engine
         const nodes = [];
         const links = [];
         const themeSet = new Set();
@@ -575,7 +575,7 @@ function loadInsightsGraph() {
             return "vented"; 
         };
 
-        // Create Session Nodes & Links
+        // Creates Session Nodes & Links
         sessions.forEach((sessionMsgs, index) => {
             const sessionId = `Session ${index + 1}`;
             const theme = getSummaryWord(sessionMsgs);
@@ -609,7 +609,7 @@ function loadInsightsGraph() {
                 
                 if ((relatedThemes[t1] && relatedThemes[t1].includes(t2)) || 
                     (relatedThemes[t2] && relatedThemes[t2].includes(t1))) {
-                    links.push({ source: t1, target: t2, type: 'theme-link' }); // Creates the invisible elastic band
+                    links.push({ source: t1, target: t2, type: 'theme-link' }); // Creates the dashed-line
                 }
             }
         }
@@ -777,7 +777,7 @@ function loadHistoryPage() {
 
     const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-    // 1. Group messages into sessions (30-minute gap rule)
+    // 1. Group messages into sessions
     const sessions = [];
     let currentSession = [];
     let lastTimeObj = null;
@@ -822,7 +822,7 @@ function loadHistoryPage() {
             <div class="history-card-right">Click to View Session Details</div>
         `;
 
-        // Pass data to modal
+        // Pass data to module
         card.onclick = () => openCardInfo(`Session ${sessionNumber} - ${date}`, sessionMsgs);
         feedContainer.appendChild(card);
     });
@@ -842,11 +842,11 @@ function openCardInfo(title, messages) {
         body.appendChild(bubble);
     });
 
-    document.getElementById('session-modal-overlay').style.display = 'flex';
+    document.getElementById('session-overlay').style.display = 'flex';
 }
 
 function hideSessionDetails() {
-    document.getElementById('session-modal-overlay').style.display = 'none';
+    document.getElementById('session-overlay').style.display = 'none';
 }
 
 function clearHistoryData() {

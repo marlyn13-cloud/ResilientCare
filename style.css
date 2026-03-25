@@ -1050,7 +1050,7 @@ textarea::placeholder {
 .session-history-card:hover {
     background: #1e1e2f;
     border-color: #a78bfa;
-    transform: translateX(5px); /* Slides slightly to the right on hover */
+    transform: translateX(5px); /* Slides slightly to the right if hovered */
 }
 .card-info{
     background: #16171d;
@@ -1137,39 +1137,39 @@ textarea::placeholder {
     transform: translateY(-2px);
 }
 /* Corrected Modal Overlay */
-.modal-header {
+.header {
     display: flex;
-    justify-content: space-between; /* Pushes title left, button right */
-    align-items: center; /* Vertically centers them */
+    justify-content: space-between; 
+    align-items: center;
     border-bottom: 1px solid #2a2b36;
     padding-bottom: 15px;
     margin-bottom: 20px;
 
 }
 
-.modal-header h3 {
+.header h3 {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
     color: #fff;
 }
-/* THE MODAL OVERLAY (Forces it to float on top of everything) */
-.modal-overlay {
+/* OVERLAY (Forces it to float on top of everything) */
+.overlay {
     position: fixed; 
     top: 0; 
     left: 0;
     width: 100vw; 
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7); /* Dark tinted background */
-    backdrop-filter: blur(8px); /* Frosted glass effect */
+    background: rgba(0, 0, 0, 0.7); 
+    backdrop-filter: blur(8px); 
     display: flex; 
     align-items: center;
     justify-content: center;
     z-index: 9999; /* Guarantees it sits above the navigation bar */
 }
 
-/* THE MODAL WINDOW (Keeps it a reasonable size) */
-.modal-content {
+/* THE content WINDOW  */
+.content {
     width: 90%;
     max-width: 600px;
     max-height: 80vh; /* Prevents it from being taller than the screen */
