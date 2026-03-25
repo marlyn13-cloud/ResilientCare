@@ -763,6 +763,79 @@ textarea::placeholder {
     background: var(--surface-2); 
     color: var(--text); 
 }
+/* End of Session UI Elements */
+.session-end-container {
+    margin-top: 30px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+.session-end-divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.session-end-divider::before,
+.session-end-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #3b3c54;
+}
+
+.session-end-divider span {
+    padding: 0 15px;
+    color: #a78bfa;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.session-end-text {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 15px;
+    max-width: 80%;
+    line-height: 1.5;
+}
+
+.session-end-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap; /* Allows to stack on very small screens */
+}
+
+.btn-end-action {
+    background: #1e1e2f;
+    border: 1px solid #3b3c54;
+    color: #e5e7eb;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-end-action:hover {
+    background: #2a2b36;
+    border-color: #a78bfa;
+    color: #a78bfa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(167, 139, 250, 0.15);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
 /* Insights Page */
 .insights-container {

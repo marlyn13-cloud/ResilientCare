@@ -283,6 +283,7 @@ class ResilientCareEngine {
 
         let responseText;
         let finalMode = "Balanced";
+        let isComplete = false; // Tracks whether we've completed a session. 
 
         // 3. GENERATE RESPONSE BASED ON STATE
         if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
@@ -299,6 +300,7 @@ class ResilientCareEngine {
             if (this.state.step >= 2) {
                 this.state.currentIntent = null;
                 this.state.step = 0;
+                isComplete = true; //Confirms the end of a session
             }
         }
         // 4. SMART RESPONSES
@@ -324,7 +326,8 @@ class ResilientCareEngine {
 
         return {
             text: responseText,
-            detectedMode: finalMode
+            detectedMode: finalMode,
+            isComplete: isComplete
         };
     }
 }
@@ -459,9 +462,33 @@ window.handleSend = function() {
         AI.generateResponse(userText).then(aiResponse => {
             displayChatMessage(aiResponse.text);
             console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
+            
+            // If the AI says the session is complete then it shows more options
+            if (aiResponse.isComplete) {
+                setTimeout(() => {
+                    displayEndSessionUI();
+                }, 1000); // Slight delay so it feels like a natural transition
+            }
         });
 
     }, 1500);
+}
+function displayEndSessionUI() {
+    const mainContent = document.querySelector('.vent-main');
+    const endDiv = document.createElement('div');
+    endDiv.className = 'session-end-container';
+    
+    endDiv.innerHTML = `
+        <div class="session-end-divider"><span>Session Complete</span></div>
+        <p class="session-end-text">Click on another topic starter to start a new session, or explore your progress below:</p>
+        <div class="session-end-buttons">
+            <button class="btn-end-action" onclick="window.location.href='insights.html'">📈 View Insights</button>
+            <button class="btn-end-action" onclick="window.location.href='history.html'">🕰️ View History</button>
+        </div>
+    `;
+    
+    mainContent.appendChild(endDiv);
+    scrollToBottom();
 }
 
 function displayUserMessage(text) {
@@ -842,11 +869,11 @@ function openCardInfo(title, messages) {
         body.appendChild(bubble);
     });
 
-    document.getElementById('session-overlay').style.display = 'flex';
+    document.getElementById('session-module-overlay').style.display = 'flex';
 }
 
 function hideSessionDetails() {
-    document.getElementById('session-overlay').style.display = 'none';
+    document.getElementById('session-module-overlay').style.display = 'none';
 }
 
 function clearHistoryData() {
