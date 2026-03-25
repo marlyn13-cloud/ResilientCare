@@ -3,7 +3,7 @@ In progress AI project
 
 #AI BOT IS MADE
 
-- Implement view history tab
-- Implement settings tab
+- Make AI smarter (Refine)
+- Properly set up the README
 
 
