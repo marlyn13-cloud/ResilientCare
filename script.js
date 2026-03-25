@@ -13,13 +13,11 @@ async function loadAIModel() {
     if (indicator) indicator.innerText = "Downloading AI Models... (Once)";
 
     try {
-        // 1. Loads the Distress Detector
         sentimentModel = await window.transformers.pipeline(
             "sentiment-analysis",
             "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
         );
 
-        // 2. Load the Classifier 
         intentClassifier = await window.transformers.pipeline(
             "zero-shot-classification",
             "Xenova/mobilebert-uncased-mnli"
@@ -52,7 +50,6 @@ class ResilientCareEngine {
         this.memory = [];
         this.maxMemory = 12;
 
-        // Tracks where the user is in the conversation
         this.state = {
             currentIntent: null,
             step: 0,
@@ -60,8 +57,6 @@ class ResilientCareEngine {
         };
 
         this.intentDatabase = {
-            // Different types of intents that coincide with the users emotional state. 
-            // Each has a handler that generates the appropriate response based on the conversation step.
             "coursework stress": {
                 autoMode: "Direct",
                 handler: (ctx, step) => {
@@ -136,24 +131,15 @@ class ResilientCareEngine {
                 autoMode: "Empathetic",
                 handler: (ctx, step, lastInput) => {
                     const safeInput = (lastInput || "").toLowerCase();
-
-                    // Step 0: The Initial Question
                     if (step === 0) {
                         return "I'm really sorry you're feeling anxious. It's completely okay to have days like this. Do you know what's making you feel anxious?";
                     }
-
-                    // Step 1: The seperating Paths 
                     if (step === 1) {
-                        // PATH A: They don't know why
                         if (safeInput.includes("no") || safeInput.includes("not sure") || safeInput.includes("i don't")) {
                             return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Be kind to yourself today, even something tiny like getting a snack can help. The coursework will be there later; take care of yourself first.";
                         }
-                        
-                        // PATH B: They say yes, OR they just start venting about the reason
                         return "Thank you for sharing that with me. When you're dealing with anxiety, it's important to be gentle with yourself. Go grab some water, listen to a comfort song, or just rest for a bit to let your nervous system reset.";
                     }
-                    
-                    // Fallback just in case they keep talking after the flow ends
                     return "Take it one small step at a time. I'm always here if you need to keep venting.";
                 }
             },
@@ -161,25 +147,16 @@ class ResilientCareEngine {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
                     const safeInput = (lastInput || "").toLowerCase();
-                    
                     if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet to explain what happened?";
-                    
                     if (step === 1) {
-                        // 2. PATH A: The user has NOT emailed them yet
                         if (safeInput.includes("no") || safeInput.includes("not yet")) {
                             return "Okay, review the syllabus first to see if there is a makeup policy. If there is, follow those instructions exactly. If not, email the professor immediately to explain the situation and ask if there are options.";
                         }
-                        
-                        // 3. PATH B: The user HAS already emailed them
                         if (safeInput.includes("yes") || safeInput.includes("already")) {
                             return "Good. You took the hardest step. Now we just have to wait for their reply.";
                         }
-                        
-                        // 4. FALLBACK: If they type something confusing that isn't yes or no
                         return "Either way, the best move is to check the syllabus for the makeup policy and email the professor as soon as possible.";
                     }
-                    
-                    // Step 2
                     return "Right now, to reduce stress, close your laptop, wait for a response,step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
                 }
             },
@@ -204,26 +181,11 @@ class ResilientCareEngine {
         return baseText;
     }
 
-    maybeAddFollowUp(text) {
-        if (text.includes("?")) return text;
-        const followUps = [
-            "What part of this is hardest right now?",
-            "What’s making this feel overwhelming?",
-            "What’s one small step you could try?"
-        ];
-        if (Math.random() > 0.5) {
-            return text + "\n\n" + followUps[Math.floor(Math.random() * followUps.length)];
-        }
-        return text;
-    }
-
     async generateResponse(userInput) {
         this.remember("user", userInput);
 
         const emotion = await detectEmotion(userInput);
         
-        // 1. Quick Starter presets based on exact matches to common student stress scenarios. 
-        // This allows for instant responses if a user doesn't know whow to express themselves.
         const exactMatches = {
             "I feel frustrated. How can I deal with this frustration?": "frustration", 
             "I feel sad. What are some steps to cope?": "sadness",
@@ -237,14 +199,12 @@ class ResilientCareEngine {
             "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
             "I feel like everyone else gets it and I'm the only one lost.": "imposter syndrome",
             "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload",
-            //If user types instead of selecting a quick starter.
             "Coursework is piling up and I'm stressed.": "coursework stress",
             "I got a bad grade and I feel crushed.": "harsh grading",
             "I'm so lost on this assignment.": "confusing material",
             "I'm totally burned out.": "burnout and doubt",
             "Everyone else gets it but me.": "imposter syndrome",
             "Too many deadlines at once.": "deadline overload",
-            //case sensitivity variations
             "coursework is piling up and I'm stressed.": "coursework stress",
             "i got a bad grade and I feel crushed.": "harsh grading",
             "i'm so lost on this assignment.": "confusing material",
@@ -255,7 +215,6 @@ class ResilientCareEngine {
 
         let topMLIntent = null;
         let mlConfidence = 0;
-       
 
         if (intentClassifier && !exactMatches[userInput]) {
             const result = await intentClassifier(userInput, this.categories);
@@ -263,7 +222,6 @@ class ResilientCareEngine {
             mlConfidence = result.scores[0];
         }
 
-        // 2. CONVERSATION STATE 
         if (exactMatches[userInput]) {
             this.state.currentIntent = exactMatches[userInput];
             this.state.step = 0;
@@ -283,9 +241,8 @@ class ResilientCareEngine {
 
         let responseText;
         let finalMode = "Balanced";
-        let isComplete = false; // Tracks whether we've completed a session. 
+        let isComplete = false; 
 
-        // 3. GENERATE RESPONSE BASED ON STATE
         if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
             const handler = this.intentDatabase[this.state.currentIntent].handler;
             
@@ -300,10 +257,9 @@ class ResilientCareEngine {
             if (this.state.step >= 2) {
                 this.state.currentIntent = null;
                 this.state.step = 0;
-                isComplete = true; //Confirms the end of a session
+                isComplete = true; 
             }
         }
-        // 4. SMART RESPONSES
         else {
             if (emotion === "distressed") {
                 const stressedFallbacks = [
@@ -334,19 +290,13 @@ class ResilientCareEngine {
 
 const AI = new ResilientCareEngine();
 
-//END OF AI LOGIC
-
 // 3. UI, NAVIGATION, VENT BOX
 // ==========================================
 
 window.sendChip = function(text) {
-    // 1. REVEAL THE TEXT BOX
     const inputArea = document.getElementById('chat-input-area');
-    if (inputArea) {
-        inputArea.style.display = 'flex'; 
-    }
+    if (inputArea) inputArea.style.display = 'flex'; 
 
-    // 2. DROP THE TEXT IN THE TEXT BOX
     const inputElement = document.getElementById('vent-input');
     if (inputElement) {
         inputElement.value = text;
@@ -362,17 +312,12 @@ function navigateTo(screenId) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-// END OF VENT BOX FUNCTIONS
-
-//HOME SCREEN FUNCTIONS
-    // 1. Setup Date on Home Screen
     const dateEl = document.getElementById('current-date');
     if(dateEl) {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         dateEl.innerText = new Date().toLocaleDateString('en-US', options);
     }
 
-    // 3. Vent Button Hold Logic
     const circle = document.querySelector('.progress-ring__circle');
     const ventBtn = document.querySelector('.btn-vent');
     
@@ -392,9 +337,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             holdTimer = setTimeout(() => {
                 clearInterval(progressInterval);
-                window.location.href = "vent.html"; 
-                //Resets the progress bar if not fully pressed.
-                circle.style.strokeDashoffset = circumference;
+                // Redirects and ensures we start a new tracking ID
+                window.startNewSession(); 
             }, 1500); 
         }
 
@@ -415,15 +359,29 @@ document.addEventListener("DOMContentLoaded", () => {
 // 4. VENT BOX CHAT & AUTO-SAVE LOGIC
 // ==========================================
 
+// FORCE NEW SESSION LOGIC
+window.startNewSession = function() {
+    localStorage.removeItem('activeSessionId'); 
+    window.location.href = 'vent.html'; // Directs user to the vent box
+}
+
 function autoSaveSession(role, text) {
     let history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
     const now = new Date();
+    
+    // NEW: Session ID system to properly group sessions
+    let sessionId = localStorage.getItem('activeSessionId');
+    if (!sessionId) {
+        sessionId = Date.now().toString(); 
+        localStorage.setItem('activeSessionId', sessionId);
+    }
     
     history.push({
         role: role,
         text: text,
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        date: now.toLocaleDateString()
+        date: now.toLocaleDateString(),
+        sessionId: sessionId // Attach the stamp
     });
     
     localStorage.setItem('resilientCareHistory', JSON.stringify(history));
@@ -463,16 +421,16 @@ window.handleSend = function() {
             displayChatMessage(aiResponse.text);
             console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
             
-            // If the AI says the session is complete then it shows more options
             if (aiResponse.isComplete) {
                 setTimeout(() => {
                     displayEndSessionUI();
-                }, 1000); // Slight delay so it feels like a natural transition
+                }, 1000); 
             }
         });
 
     }, 1500);
 }
+
 function displayEndSessionUI() {
     const mainContent = document.querySelector('.vent-main');
     const endDiv = document.createElement('div');
@@ -535,21 +493,37 @@ function loadInsightsGraph() {
     try {
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-        // 1. Group messages into sessions
+        // NEW: Group by Session ID to sync with History page
         const sessions = [];
         let currentSession = [];
+        let lastSessionId = null;
         let lastTimeObj = null;
 
         history.forEach(msg => {
             if(!msg.date || !msg.time) return;
-            const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
-            
-            if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 1) {
+
+            let isNewSession = false;
+
+            if (msg.sessionId) {
+                if (lastSessionId && msg.sessionId !== lastSessionId) {
+                    isNewSession = true;
+                }
+            } else {
+                // Fallback for older messages
+                const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
+                if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+                    isNewSession = true;
+                }
+            }
+
+            if (isNewSession) {
                 sessions.push(currentSession);
                 currentSession = [];
             }
+
             currentSession.push(msg);
-            lastTimeObj = msgTimeObj;
+            lastSessionId = msg.sessionId || null;
+            lastTimeObj = new Date(`${msg.date} ${msg.time}`);
         });
         if (currentSession.length > 0) sessions.push(currentSession);
 
@@ -564,32 +538,7 @@ function loadInsightsGraph() {
             container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
             return;
         }
-        //CLEAR GRAPH DATA 
-    window.clearGraphData = function() {
-    // 1. Ask the user to confirm deletion
-    const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
-    
-    if (isConfirmed) {
-        // 2. Wipes the local memory
-        localStorage.removeItem('resilientCareHistory');
-        
-        // 3. Clears the Graph 
-        const container = document.getElementById('d3-graph-container');
-        if (container) {
-            container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
-        }
 
-        // 4. Reset the Bottom Stats
-        const statsSummary = document.getElementById('stats-summary');
-        const themeTags = document.getElementById('theme-tags');
-        
-        if (statsSummary) statsSummary.innerText = "0 Sessions Logged";
-        if (themeTags) themeTags.innerHTML = '<span class="theme-tabs">No data yet</span>';
-        
-        console.log("Graph and history cleared successfully.");
-    }
-};
-        // 2. Prepares Data for the D3 Graph Engine
         const nodes = [];
         const links = [];
         const themeSet = new Set();
@@ -602,22 +551,19 @@ function loadInsightsGraph() {
             return "vented"; 
         };
 
-        // Creates Session Nodes & Links
         sessions.forEach((sessionMsgs, index) => {
             const sessionId = `Session ${index + 1}`;
             const theme = getSummaryWord(sessionMsgs);
             themeSet.add(theme);
 
             nodes.push({ id: sessionId, group: 'session', date: sessionMsgs[0].date, theme: theme, messages: sessionMsgs });
-            links.push({ source: sessionId, target: theme }); // Links the session to its theme
+            links.push({ source: sessionId, target: theme }); 
         });
 
-        // Creates Theme Nodes
         themeSet.forEach(theme => {
             nodes.push({ id: theme, group: 'theme' });
         });
 
-        //THEME CONNECTIONS
         const relatedThemes = {
             "overwhelm": ["stressed", "anxious", "deadline", "burnout"],
             "stressed": ["overwhelm", "deadline", "burnout", "worried"],
@@ -636,13 +582,11 @@ function loadInsightsGraph() {
                 
                 if ((relatedThemes[t1] && relatedThemes[t1].includes(t2)) || 
                     (relatedThemes[t2] && relatedThemes[t2].includes(t1))) {
-                    links.push({ source: t1, target: t2, type: 'theme-link' }); // Creates the dashed-line
+                    links.push({ source: t1, target: t2, type: 'theme-link' }); 
                 }
             }
         }
 
-        // 3. Setup the D3 Canvas with Zoom & Pan
-        // ------------------------------------
         const width = container.clientWidth;
         const height = container.clientHeight || 400;
 
@@ -671,36 +615,31 @@ function loadInsightsGraph() {
             svg.transition().duration(500).call(zoomBehavior.transform, d3.zoomIdentity);
         });
 
-        // 4. Creates the graph
         const simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.type === 'theme-link' ? 250 : 100)) 
             .force("charge", d3.forceManyBody().strength(-400)) 
             .force("center", d3.forceCenter(width / 2, height / 2)); 
 
-        // 5. Draw the Connecting Lines
         const link = g.append("g")
             .selectAll("line")
             .data(links)
             .join("line")
-            //theme links as dashed purple lines, and session links as solid gray lines
             .attr("stroke", d => d.type === 'theme-link' ? "#a78bfa" : "#3b3c54")
             .attr("stroke-width", d => d.type === 'theme-link' ? 1.5 : 2)
             .attr("stroke-dasharray", d => d.type === 'theme-link' ? "6,6" : "none")
             .attr("stroke-opacity", d => d.type === 'theme-link' ? 0.4 : 0.6);
 
-        // 6. Draws the Nodes
         const node = g.append("g")
             .selectAll("circle")
             .data(nodes)
             .join("circle")
-            .attr("r", d => d.group === 'theme' ? 24 : 14) // Makes themes larger than sessions
+            .attr("r", d => d.group === 'theme' ? 24 : 14) 
             .attr("fill", d => d.group === 'theme' ? "#a78bfa" : "#1e1e2f")
             .attr("stroke", d => d.group === 'theme' ? "#fff" : "#a78bfa")
             .attr("stroke-width", 2)
             .attr("cursor", "pointer")
-            .call(drag(simulation)); // Enables dragging individual nodes
+            .call(drag(simulation)); 
 
-        // 7. Add Text Labels
         const labels = g.append("g")
             .selectAll("text")
             .data(nodes)
@@ -712,14 +651,12 @@ function loadInsightsGraph() {
             .attr("text-anchor", "middle")
             .attr("dy", d => d.group === 'theme' ? 40 : 28);
 
-        // 8. Handle Clicks
         node.on("click", (event, d) => {
             if (d.group === 'session') {
                 openSessionModule(d.id.replace('Session ', ''), d.date, d.theme, d.messages);
             }
         });
 
-        // 9. Updates positions on every frame
         simulation.on("tick", () => {
             link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
                 .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
@@ -727,7 +664,6 @@ function loadInsightsGraph() {
             labels.attr("x", d => d.x).attr("y", d => d.y);
         });
 
-        // 10. Dragging Logic
         function drag(simulation) {
             return d3.drag()
                 .on("start", (event) => {
@@ -746,7 +682,6 @@ function loadInsightsGraph() {
                 });
         }
 
-        // bottom theme tags
         const themesHTML = Array.from(themeSet).slice(0, 5).map(theme => `<span class="theme-tabs">${theme}</span>`).join('');
         document.getElementById('theme-tags').innerHTML = themesHTML || '<span class="theme-tabs">N/A</span>';
 
@@ -754,24 +689,18 @@ function loadInsightsGraph() {
         console.error("Error drawing force graph:", error);
     }
 }
+
 function openSessionModule(id, date, label, messages) {
     document.getElementById('module-title').innerText = `Session ${id}`;
     document.getElementById('module-date').innerText = date;
     document.getElementById('module-theme').innerText = label;
 
-    //THE AI SUMMARIZER
-    
-    // 1. Filter to only look at what the user typed
     const userMsgs = messages.filter(m => m.role === 'User').map(m => m.text);
     let summaryText = "You checked in today but didn't share much. Taking the time to open the app is still a great first step toward building resilience!";
 
     if (userMsgs.length > 0) {
         const firstMsg = userMsgs[0];
-        
-        // Holds the longest message the user sent
         const longestMsg = userMsgs.reduce((a, b) => a.length > b.length ? a : b, "");
-        
-        // Clean up the string so it doesn't break the paragraph visually
         const snippet = longestMsg.length > 90 ? longestMsg.substring(0, 90) + "..." : longestMsg;
 
         if (userMsgs.length === 1) {
@@ -781,18 +710,35 @@ function openSessionModule(id, date, label, messages) {
         }
     }
 
-    //generated summary
     document.getElementById('module-summary').innerText = summaryText;
-
-    //display summary
     document.getElementById('session-module').style.display = 'flex';
 }
 
 function closeSessionModule() {
     document.getElementById('session-module').style.display = 'none';
 }
-//END OF INSIGHTS PAGE
-//====================
+
+// Moved CLEAR GRAPH DATA outside to prevent memory leaks
+window.clearGraphData = function() {
+    const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
+    
+    if (isConfirmed) {
+        localStorage.removeItem('resilientCareHistory');
+        
+        const container = document.getElementById('d3-graph-container');
+        if (container) {
+            container.innerHTML = '<p style="color:#9b9a9a; padding:20px; text-align:center; width:100%; margin-top:80px;">Complete a chat session to generate your graph.</p>';
+        }
+
+        const statsSummary = document.getElementById('stats-summary');
+        const themeTags = document.getElementById('theme-tags');
+        
+        if (statsSummary) statsSummary.innerText = "0 Sessions Logged";
+        if (themeTags) themeTags.innerHTML = '<span class="theme-tabs">No data yet</span>';
+        
+        console.log("Graph and history cleared successfully.");
+    }
+};
 
 // ==========================================
 // 6. HISTORY PAGE LOGIC
@@ -804,35 +750,48 @@ function loadHistoryPage() {
 
     const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-    // 1. Group messages into sessions
+    // NEW: Group by Session ID to sync perfectly with new sessions
     const sessions = [];
     let currentSession = [];
+    let lastSessionId = null;
     let lastTimeObj = null;
 
     history.forEach(msg => {
         if(!msg.date || !msg.time) return;
-        const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
-        
-        if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 1) {
+
+        let isNewSession = false;
+
+        if (msg.sessionId) {
+            if (lastSessionId && msg.sessionId !== lastSessionId) {
+                isNewSession = true;
+            }
+        } else {
+            // Fallback
+            const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
+            if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
+                isNewSession = true;
+            }
+        }
+
+        if (isNewSession) {
             sessions.push(currentSession);
             currentSession = [];
         }
+
         currentSession.push(msg);
-        lastTimeObj = msgTimeObj;
+        lastSessionId = msg.sessionId || null;
+        lastTimeObj = new Date(`${msg.date} ${msg.time}`);
     });
     if (currentSession.length > 0) sessions.push(currentSession);
 
-    // 2. Handle Empty State
     if (sessions.length === 0) {
         feedContainer.innerHTML = '<p style="color:#9b9a9a; text-align:center; margin-top:50px;">No session history found. Start venting to see your records here!</p>';
         return;
     }
 
-    // 3. Reverse the array so NEWEST sessions are at the top
     sessions.reverse();
     feedContainer.innerHTML = '';
 
-    // 4. Generate the HTML Cards
     sessions.forEach((sessionMsgs, index) => {
         const sessionNumber = sessions.length - index; 
         const date = sessionMsgs[0].date;
@@ -849,7 +808,6 @@ function loadHistoryPage() {
             <div class="history-card-right">Click to View Session Details</div>
         `;
 
-        // Pass data to module
         card.onclick = () => openCardInfo(`Session ${sessionNumber} - ${date}`, sessionMsgs);
         feedContainer.appendChild(card);
     });
@@ -869,42 +827,37 @@ function openCardInfo(title, messages) {
         body.appendChild(bubble);
     });
 
-    document.getElementById('session-module-overlay').style.display = 'flex';
+    document.getElementById('session-overlay').style.display = 'flex';
 }
 
 function hideSessionDetails() {
-    document.getElementById('session-module-overlay').style.display = 'none';
+    document.getElementById('session-overlay').style.display = 'none';
 }
 
 function clearHistoryData() {
     const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
     if (isConfirmed) {
         localStorage.removeItem('resilientCareHistory');
-        loadHistoryPage(); // Instantly reloads the page to show the "No history" message
+        loadHistoryPage(); 
     }
 }
+
 // ==========================================
 // 7. SETTINGS PAGE LOGIC
 // ==========================================
 
 const themes = {
-    blue: { color: "#60a5fa", label: "BLUE" },
-    pink: { color: "#f472b6", label: "Pink" },
-    green: { color: "#34d399", label: "Green" },
-    purple: { color: "#a78bfa", label: "Purple" }
+    dark: { label: "Dark", className: "theme-dark" },
+    lightPink: { label: "Light Pink", className: "theme-light-pink" },
+    lightBlue: { label: "Light Blue", className: "theme-light-blue" }
 };
 
 function loadSettings() {
-    // 1. Load Notifications State
     const reminderToggle = document.getElementById('daily-reminder-toggle');
     if (reminderToggle) {
         const isEnabled = localStorage.getItem('dailyReminder') === 'true';
         reminderToggle.checked = isEnabled;
     }
-
-    // 2. Load Theme State
-    const currentTheme = localStorage.getItem('appTheme') || 'pink';
-    updateThemeUI(currentTheme);
 }
 
 function toggleReminder() {
@@ -918,28 +871,31 @@ function setTheme(themeName) {
 }
 
 function updateThemeUI(activeTheme) {
-    // Reset all buttons
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.classList.remove('active-theme');
-        const baseId = btn.id.replace('theme-', '');
-        if (themes[baseId]) btn.innerText = themes[baseId].label;
-    });
+    const themeOptions = document.querySelector('.theme-options');
+    if (themeOptions) {
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active-theme');
+            const baseId = btn.id.replace('theme-', '');
+            if (themes[baseId]) btn.innerText = themes[baseId].label;
+        });
 
-    // Highlight the selected button and add the checkmark
-    const activeBtn = document.getElementById(`theme-${activeTheme}`);
-    if (activeBtn) {
-        activeBtn.classList.add('active-theme');
-        activeBtn.innerText = themes[activeTheme].label + " ✓";
+        const activeBtn = document.getElementById(`theme-${activeTheme}`);
+        if (activeBtn) {
+            activeBtn.classList.add('active-theme');
+            activeBtn.innerText = themes[activeTheme].label + " ✓";
+        }
     }
     
-    //new color into the CSS root variables!
-    if (themes[activeTheme]) {
-        document.documentElement.style.setProperty('--primary-accent', themes[activeTheme].color);
+    document.body.className = ''; 
+    if (themes[activeTheme] && activeTheme !== 'dark') {
+        document.body.classList.add(themes[activeTheme].className);
     }
 }
 
-// settings load automatically when the page is opened
 document.addEventListener("DOMContentLoaded", () => {
+    const savedTheme = localStorage.getItem('appTheme') || 'dark';
+    updateThemeUI(savedTheme);
+
     if(document.getElementById('daily-reminder-toggle')) {
         loadSettings();
     }
