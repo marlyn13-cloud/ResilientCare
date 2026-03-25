@@ -852,19 +852,6 @@ const themes = {
     lightBlue: { label: "Light Blue", className: "theme-light-blue" }
 };
 
-function loadSettings() {
-    const reminderToggle = document.getElementById('daily-reminder-toggle');
-    if (reminderToggle) {
-        const isEnabled = localStorage.getItem('dailyReminder') === 'true';
-        reminderToggle.checked = isEnabled;
-    }
-}
-
-function toggleReminder() {
-    const toggle = document.getElementById('daily-reminder-toggle');
-    localStorage.setItem('dailyReminder', toggle.checked);
-}
-
 function setTheme(themeName) {
     localStorage.setItem('appTheme', themeName);
     updateThemeUI(themeName);
@@ -896,7 +883,4 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem('appTheme') || 'dark';
     updateThemeUI(savedTheme);
 
-    if(document.getElementById('daily-reminder-toggle')) {
-        loadSettings();
-    }
 });

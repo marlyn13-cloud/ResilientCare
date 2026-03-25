@@ -1342,17 +1342,3 @@ textarea::placeholder {
     transition: .4s;
 }
 
-input:checked + .slider {
-    background-color: var(--primary-accent);
-}
-
-input:checked + .slider:before {
-    transform: translateX(20px);
-}
-
-.slider.round { 
-    border-radius: 24px; 
-}
-.slider.round:before { 
-    border-radius: 50%; 
-}
