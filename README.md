@@ -3,6 +3,8 @@ In progress AI project
 
 #AI BOT IS MADE
 
+-Clean up code 
+
 - Make AI smarter (Refine)
 
 Make the Al:
