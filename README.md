@@ -4,6 +4,7 @@ In progress AI project
 #AI BOT IS MADE
 
 - Make AI smarter (Refine)
+
 Make the Al:
 
 • Remember past conversations
