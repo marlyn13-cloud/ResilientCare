@@ -49,6 +49,10 @@ Make the Al:
 
 •Behavioral nudges ("You've been stressed 3 days straight")
 
+- change landing page ui. look in pics for inspo
+
+- implement how it works button looks in pics (pop up box option not full screen)
+
 - Properly set up the README
 
 
