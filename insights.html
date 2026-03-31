@@ -39,23 +39,31 @@
 
     </div>
 <!--KEY THEMES/SESSION COMPLETED BOXES-->
-            <div class="insights-bottom-panels">
-                <div class="panel key-themes">
+            <div class="insights-bottom-panels" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                
+                <div class="panel key-themes" style="flex: 1; min-width: 150px;">
                     <h3>KEY THEMES</h3>
                     <div class="theme-tags" id="theme-tags"></div>
                 </div>
                 
-                <div class="panel sessions-stats">
+                <div class="panel sessions-stats" style="flex: 1; min-width: 150px;">
                     <div class="stats-text">
-                        <p style="margin:0; font-weight:600; color: #5f5a5a;">Sessions Completed</p>
-                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #5a5959;">Click a node to see session details</p>
+                        <p style="margin:0; font-weight:600; color: var(--text-main);">Sessions Completed</p>
+                        <p style="margin: 5px 0 0 0; font-size: 11px; color: var(--text-muted);">Click a node to see session details</p>
                     </div>
-                    <div class="stats-summary" id="stats-summary">
-                        0 Sessions — 0 Connections
+                    <div class="stats-summary" id="stats-summary" style="margin-top: 10px; color: var(--text-main);">
+                        0 Sessions Logged- 0 Connections
                     </div>
                 </div>
-            </div> 
-        </div> 
+
+                <div class="panel streak-stats" style="flex: 1; min-width: 150px; text-align: center;">
+                    <h3 style="margin-bottom: 5px; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">🔥 Current Streak</h3>
+                    <div id="streak-counter" style="font-size: 28px; font-weight: 700; color: var(--primary-accent); margin-top: 5px;">
+                        0 Days
+                    </div>
+                </div>
+
+            </div>
 <!--WHEN A NODE IS CLICKED SHOWS SUMMARY DETAILS OF THAT SESSION-->
         <div id="session-module" class="module-overlay" style="display: none;">
             <div class="body-content">

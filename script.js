@@ -652,6 +652,16 @@ function removeTypingIndicator() {
 
 function loadInsightsGraph() {
     try {
+        // THE STREAK COUNTER FROM MEMORY ENGINE
+        // =========================================================
+        const profile = UserMemory.getProfile();
+        const streakEl = document.getElementById('streak-counter');
+        
+        if (streakEl) {
+            streakEl.innerText = profile.streakCount > 0 ? `${profile.streakCount} Days` : "Ready to start!";
+        }
+        // =========================================================
+
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
         // Session ID  sync with History page
