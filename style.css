@@ -21,8 +21,8 @@ body.theme-light-pink {
     --bg-card: #f0b7b7; 
     --border-color: #c9a6a8; 
     --text-main: #4a3031; 
-    --text-muted: #8c6667; 
-    --primary-accent: #d1a5a6; 
+    --text-muted: #795959; 
+    --primary-accent: #795959; 
 }
 
 /* LIGHT BLUE THEME  */
@@ -32,7 +32,7 @@ body.theme-light-blue {
     --border-color: #a6d5d6; 
     --text-main: #1f3b3d; 
     --text-muted: #4e7a7c; 
-    --primary-accent: #6ab9bb; 
+    --primary-accent: #4e7a7c; 
 }
 
 /* Apply the variables globally */
