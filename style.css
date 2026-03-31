@@ -17,22 +17,22 @@
 
 /* LIGHT PINK THEME  */
 body.theme-light-pink {
-    --bg-main: #f8c6e2; 
-    --bg-card: #fc99d1; 
-    --border-color: #fd4eb1; 
-    --text-main: #1f2937; 
-    --text-muted: #6b7280; 
-    --primary-accent: #db2777; 
+    --bg-main: #f3d8d8; 
+    --bg-card: #f0b7b7; 
+    --border-color: #c9a6a8; 
+    --text-main: #4a3031; 
+    --text-muted: #8c6667; 
+    --primary-accent: #d1a5a6; 
 }
 
 /* LIGHT BLUE THEME  */
 body.theme-light-blue {
-    --bg-main: #a7c2fd; 
-    --bg-card: #a7c2fd; 
-    --border-color: #4790e9; 
-    --text-main: #056dfd; 
-    --text-muted: #486eb9; 
-    --primary-accent: #2563eb; 
+    --bg-main: #e1f1f1; 
+    --bg-card: #8fc2c4; 
+    --border-color: #a6d5d6; 
+    --text-main: #1f3b3d; 
+    --text-muted: #4e7a7c; 
+    --primary-accent: #6ab9bb; 
 }
 
 /* Apply the variables globally */
