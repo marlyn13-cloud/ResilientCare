@@ -42,6 +42,77 @@ async function detectEmotion(text){
     return "neutral";
 }
 
+// LONG-TERM MEMORY & ANALYTICS ENGINE (STREAKS, MOOD LOG)
+// ==========================================
+
+const UserMemory = {
+    // 1. loads the user's profile
+    getProfile: function() {
+        return JSON.parse(localStorage.getItem('rc_userProfile')) || {
+            totalSessions: 0,
+            streakCount: 0,
+            lastVisitDate: null,
+            moodLog: [] // Stores the last 14 days of emotions
+        };
+    },
+
+    // 2. Save updates to the browser
+    saveProfile: function(profile) {
+        localStorage.setItem('rc_userProfile', JSON.stringify(profile));
+    },
+
+    // 3. Log a new session and calculate streaks
+    logSession: function(emotion, intent) {
+        let profile = this.getProfile();
+        const today = new Date().toLocaleDateString();
+
+        // Check Engagement & Retention Streaks
+        if (profile.lastVisitDate !== today) {
+            let yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (profile.lastVisitDate === yesterday.toLocaleDateString()) {
+                profile.streakCount++; // EX. They came back two days in a row
+            } else {
+                profile.streakCount = 1; // Streak reset
+            }
+            profile.totalSessions++;
+            profile.lastVisitDate = today;
+        }
+
+        // Track Mood Trends
+        profile.moodLog.push({ date: today, emotion: emotion, intent: intent });
+        
+        // Only set to 14 sessions to prevent storage overflow
+        if (profile.moodLog.length > 14) profile.moodLog.shift();
+
+        this.saveProfile(profile);
+        return profile;
+    },
+
+    // 4. Analyze data for Behavior
+    getNudge: function() {
+        let profile = this.getProfile();
+        if (profile.moodLog.length < 3) return null; // Not enough data yet
+
+        // Look at the last 3 sessions
+        const recentLogs = profile.moodLog.slice(-3);
+        
+        // BEHAVIORAL   Detection
+        const consecutiveStress = recentLogs.every(log => log.emotion === 'distressed' || log.intent === 'coursework stress' || log.intent === 'burnout and doubt');
+        if (consecutiveStress) {
+            return "I noticed you've been feeling stressed or overwhelmed for the last few sessions. It takes a lot of strength to keep checking in. How are you holding up today?";
+        }
+
+        // RETENTION Detection
+        if (profile.totalSessions === 5 && profile.moodLog.length === 5) {
+            return "By the way, this is your 5th session with me! I'm really proud of you for consistently taking time for your mental health. What's on your mind today?";
+        }
+
+        return null; // No nudge needed for now
+    }
+};
+
 // 2.AI ENGINE 
 // ==========================================
 
@@ -305,6 +376,7 @@ class ResilientCareEngine {
             mlConfidence = result.scores[0];
         }
 
+        // Tracking Updates
         if (exactMatches[userInput]) {
             this.state.currentIntent = exactMatches[userInput];
             this.state.step = 0;
@@ -320,6 +392,21 @@ class ResilientCareEngine {
         else if (mlConfidence > 0.25) {
             this.state.currentIntent = topMLIntent;
             this.state.step = 0;
+        }
+
+        // BEHAVIORAL CHECK
+        // ==========================================
+        if (this.state.step === 0 && this.state.currentIntent) {
+            // Log the new session into the browser memory
+            UserMemory.logSession(emotion, this.state.currentIntent);
+
+            // Check if there's a pattern
+            const nudge = UserMemory.getNudge();
+            if (nudge) {
+                this.state.step = 1; // Skips the standard Step 0 question 
+                this.remember("assistant", nudge);
+                return { text: nudge, detectedMode: "Empathetic", isComplete: false };
+            }
         }
 
         let responseText;
