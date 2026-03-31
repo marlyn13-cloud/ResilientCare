@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResilientCare.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js"></script>
@@ -27,13 +28,50 @@
                 </div>
             </div>
 
+            <button class="orb-how-it-works" onclick="openHowItWorks(event)">How it works</button>
+
             <nav class="action-row">
-                <button class="btn-insights"  onclick="window.location.href='insights.html'">View Insights</button>
+                <button class="btn-insights" onclick="window.location.href='insights.html'">View Insights</button>
                 <button class="btn-history" onclick="window.location.href='history.html'">View History</button>
-                <button class="btn-settings"onclick="window.location.href='settings.html'">View Settings</button> 
+                <button class="btn-settings" onclick="window.location.href='settings.html'">View Settings</button> 
             </nav>
         </div>
     </div>
-    </body>
-</html>
 
+    <div id="howItWorksModal" class="modal-overlay">
+        <div class="modal-content-box">
+            <button class="modal-close" onclick="closeHowItWorks()">✕</button>
+            
+            <div class="modal-header-section">
+                <span class="modal-subtitle">HOW IT WORKS</span>
+                <h2 class="modal-title">Healing happens in <br><em>three gentle steps</em></h2>
+            </div>
+
+            <div class="step-container">
+                <div class="step-number">01</div>
+                <div class="step-text">
+                    <h3>Open the app, hold the button</h3>
+                    <p>Whenever you're overwhelmed, anxious, or just need to be heard — open ResilientCare and press the glowing orb. Speak freely for as long as you need.</p>
+                </div>
+            </div>
+            
+            <div class="step-container">
+                <div class="step-number">02</div>
+                <div class="step-text">
+                    <h3>Your AI listens with care</h3>
+                    <p>Our compassionate AI processes your words with empathy and nuance — reflecting back thoughtful responses that help you feel understood, not analysed.</p>
+                </div>
+            </div>
+            
+            <div class="step-container">
+                <div class="step-number">03</div>
+                <div class="step-text">
+                    <h3>Grow through reflection</h3>
+                    <p>After each session, review emotional insights tailored to you. Watch patterns emerge, celebrate breakthroughs, and gently identify areas to nurture.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -517,6 +517,51 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 });
 
+// HOW IT WORKS MODAL LOGIC
+// ==========================================
+
+function openHowItWorks(e) {
+    if (e) e.preventDefault(); 
+    const modal = document.getElementById('howItWorksModal');
+    if (!modal) return; // Safety check
+    
+    const modalBox = modal.querySelector('.modal-content-box');
+    
+    // 1. Unhide the box and lock the background scrolling
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; 
+    
+    // 2. Smooth fade-in animation
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        modalBox.style.transform = 'translateY(0)';
+    }, 10);
+}
+
+function closeHowItWorks() {
+    const modal = document.getElementById('howItWorksModal');
+    if (!modal) return;
+    
+    const modalBox = modal.querySelector('.modal-content-box');
+    
+    // 1. Smooth fade-out animation
+    modal.style.opacity = '0';
+    modalBox.style.transform = 'translateY(20px)';
+    document.body.style.overflow = 'auto'; // Unlock background scrolling
+    
+    // 2. Hide the box completely after animation finishes
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}
+
+// Close the pop-up 
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('howItWorksModal');
+    if (event.target === modal) {
+        closeHowItWorks();
+    }
+});
 // 4. VENT BOX CHAT & AUTO-SAVE LOGIC
 // ==========================================
 
