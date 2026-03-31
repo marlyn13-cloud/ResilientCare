@@ -1,4 +1,4 @@
-// 1. AI BRAIN
+// 1. AI BRAIN & MEMORY ENGINE
 // ==========================================
 let sentimentModel = null;
 let intentClassifier = null; 
@@ -42,78 +42,82 @@ async function detectEmotion(text){
     return "neutral";
 }
 
+// THE EMPATHY LAYER (RESISTANCE DETECTION)
+// ==============================================
+function isResistance(text) {
+    const t = text.toLowerCase().trim();
+    
+    // 1. If user say a short positive word, they are NOT resisting! Lets the script continue.
+    if (t === "yes" || t === "yeah" || t === "yep" || t === "sure" || t === "ok" || t === "okay") {
+        return false; 
+    }
+    
+    // 2. Otherwise, check for standard resistance words or super short answers
+    return t.includes("idk") || t.includes("don't know") || t.includes("not sure") || t.includes("nothing") || t.length <= 4;
+}
+
 // LONG-TERM MEMORY & ANALYTICS ENGINE (STREAKS, MOOD LOG)
 // ==========================================
-
 const UserMemory = {
-    // 1. loads the user's profile
     getProfile: function() {
         return JSON.parse(localStorage.getItem('rc_userProfile')) || {
             totalSessions: 0,
             streakCount: 0,
             lastVisitDate: null,
-            moodLog: [] // Stores the last 14 days of emotions
+            moodLog: [] 
         };
     },
 
-    // 2. Save updates to the browser
     saveProfile: function(profile) {
         localStorage.setItem('rc_userProfile', JSON.stringify(profile));
     },
 
-    // 3. Log a new session and calculate streaks
     logSession: function(emotion, intent) {
         let profile = this.getProfile();
         const today = new Date().toLocaleDateString();
 
-        // Check Engagement & Retention Streaks
         if (profile.lastVisitDate !== today) {
             let yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             
             if (profile.lastVisitDate === yesterday.toLocaleDateString()) {
-                profile.streakCount++; // EX. They came back two days in a row
+                profile.streakCount++; 
             } else {
-                profile.streakCount = 1; // Streak reset
+                profile.streakCount = 1; 
             }
             profile.totalSessions++;
             profile.lastVisitDate = today;
         }
 
-        // Track Mood Trends
         profile.moodLog.push({ date: today, emotion: emotion, intent: intent });
-        
-        // Only set to 14 sessions to prevent storage overflow
         if (profile.moodLog.length > 14) profile.moodLog.shift();
 
         this.saveProfile(profile);
         return profile;
     },
 
-    // 4. Analyze data for Behavior
     getNudge: function() {
         let profile = this.getProfile();
-        if (profile.moodLog.length < 3) return null; // Not enough data yet
+        if (profile.moodLog.length < 3) return null; 
 
-        // Look at the last 3 sessions
         const recentLogs = profile.moodLog.slice(-3);
         
-        // BEHAVIORAL   Detection
+        //  Stress Nudge
         const consecutiveStress = recentLogs.every(log => log.emotion === 'distressed' || log.intent === 'coursework stress' || log.intent === 'burnout and doubt');
         if (consecutiveStress) {
             return "I noticed you've been feeling stressed or overwhelmed for the last few sessions. It takes a lot of strength to keep checking in. How are you holding up today?";
         }
 
-        // RETENTION Detection
+        // Milestone Nudge
         if (profile.totalSessions === 5 && profile.moodLog.length === 5) {
             return "By the way, this is your 5th session with me! I'm really proud of you for consistently taking time for your mental health. What's on your mind today?";
         }
 
-        return null; // No nudge needed for now
+        return null;
     }
 };
 
-// 2.AI ENGINE 
+// 2.AI ENGINE
 // ==========================================
 
 class ResilientCareEngine {
@@ -135,51 +139,47 @@ class ResilientCareEngine {
                     let taskType = "work";
                     if (inputLower.includes("essay") || inputLower.includes("paper")) taskType = "writing";
                     if (inputLower.includes("code") || inputLower.includes("project")) taskType = "project";
-                    if (inputLower.includes("read")) taskType = "reading";
-
+                    
                     if (step === 0) {
-                        const responses = [
-                            "I hear you. Coursework can pile up incredibly fast. Let's get it out of your head. Do a 'Brain Dump'—type out everything you need to do, big or small, right here.",
-                            `It sounds like you have a mountain of ${taskType} on your plate. To stop the spiral, type out a list of exactly what is due. Get it out of your brain.`,
-                            "Dealing with that much work is overwhelming. Let's organize it. What are the specific assignments weighing on you right now?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
+                        return `It sounds like you have a mountain of ${taskType} on your plate. To stop the spiral, let's get it out of your head. Type out a list of exactly what is due.`;
                     }
                     if (step === 1) {
-                        const responses = [
-                            "Okay, deep breath. Look at that list and pick the single most urgent task. What's the very first, ridiculously small micro-step you can take to start just that one task?",
-                            "Let's break it down. Ignore everything except the most critical item. What is the literal first action you need to take for it?",
-                            "Good. Now, put the rest of the list in a mental drawer. For the most urgent item, what is the smallest step you can take to get started?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
+                        if (isResistance(inputLower)) return "It's totally okay if your brain is blanking or if there's too much to list. Let's just pick one tiny thing—what is one class you know you have work for?";
+                        return "Good. Now, put the rest of the list in a mental drawer. For the most urgent item, what is the absolute smallest step you can take to get started?";
                     }
-                    const finalResponses = [
-                        "Perfect. Let's use the Pomodoro technique. Set a timer for 25 minutes and focus ONLY on that one step. You've got this!",
-                        "Great. Don't worry about finishing it yet. Just set a 15-minute timer and start that first step. Momentum will follow.",
-                        "Awesome. Close your other tabs, set a short timer, and focus just on that piece. Take a break right after."
-                    ];
-                    return finalResponses[Math.floor(Math.random() * finalResponses.length)];
+                    if (isResistance(inputLower)) return "If you can't think of a first step right now, just start by opening the document or reading the prompt. Set a 5-minute timer and just look at it. You can do this.";
+                    return "Awesome. Close your other tabs, set a short timer, and focus just on that piece. Take a break right after.";
+                }
+            },
+            "burnout and doubt": {
+                autoMode: "Empathetic",
+                handler: (ctx, step, lastInput) => {
+                    const inputLower = (lastInput || "").toLowerCase();
+                    if (step === 0) return "That sounds exhausting. Burnout is a heavy weight to carry. How long have you been feeling like this?";
+                    
+                    if (step === 1) {
+                        if (isResistance(inputLower)) return "It's okay if you're not sure. When everything blurs together, it's hard to track time. When was the last time you actually rested without feeling guilty?";
+                        return "That’s a lot to carry. Be honest—when was the last time you actually rested without looking at a screen or a textbook?";
+                    }
+                    
+                    // Step 2 Empathy 
+                    if (isResistance(inputLower)) {
+                        return "It's okay if you have no energy left to even figure it out. Please just close your laptop and let yourself exist for a bit. The work will survive without you for an hour.";
+                    }
+                    return "Right now, productivity isn’t the goal. Recovery is. Please step away from the screen for 20 minutes to reset. Your brain needs a hard reset.";
                 }
             },
             "harsh grading": {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
-                    if (step === 0) {
-                        const responses = [
-                            "That feedback probably felt incredibly personal. What exactly did the professor or TA say?",
-                            "Getting a bad grade is always a punch to the gut, especially when you tried. What part of the feedback stung the most?",
-                            "It's totally normal to feel crushed right now. Did they give you specific notes, or was it just a bad score?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
-                    }
+                    const inputLower = (lastInput || "").toLowerCase();
+                    if (step === 0) return "That feedback probably felt incredibly personal. Getting a bad grade is always a punch to the gut. What part of the feedback stung the most?";
+                    
                     if (step === 1) {
-                        const responses = [
-                            "Okay, let’s strip the tone away. If we look past how they said it, what’s the actual technical issue they pointed out?",
-                            "Let's try to separate the emotion from the critique. What is the core, factual thing you need to fix for next time?",
-                            "Take a breath and look at the rubric. What specific area lost the most points?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
+                        if (isResistance(inputLower)) return "It's okay if it all just hurts to look at right now. Try to take a breath and just look at the rubric. What specific area lost the most points?";
+                        return "Okay, let’s try to separate the emotion from the critique. If we look past how they said it, what’s the actual technical issue they pointed out?";
                     }
+                    if (isResistance(inputLower)) return "Don't force yourself to look at it right now if it's too much. Close the tab, give yourself tonight to be mad about it, and look at it again tomorrow with fresh eyes.";
                     return "Focus only on fixing that one specific issue for your next assignment. Ignore everything else for now. One step at a time.";
                 }
             },
@@ -192,92 +192,75 @@ class ResilientCareEngine {
                     if (inputLower.includes("science") || inputLower.includes("biology") || inputLower.includes("chemistry")) subject = "Science";
                     if (inputLower.includes("code") || inputLower.includes("computer") || inputLower.includes("java")) subject = "Computer Science";
 
-                    if (step === 0) {
-                        const responses = [
-                            `Yeah, feeling lost in ${subject} is incredibly frustrating. What specific topic are you looking at right now?`,
-                            `I completely understand. ${subject} can feel like a foreign language sometimes. Where exactly are you stuck?`,
-                            `That 'nothing makes sense' feeling is the worst. What is the very first sentence or equation of the assignment?`
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
-                    }
+                    if (step === 0) return `I completely understand. ${subject} can feel like a foreign language sometimes. Where exactly are you stuck?`;
+                    
                     if (step === 1) {
-                        const responses = [
-                            "Let’s shrink it down. Don't try to solve the whole problem. What’s the first thing you *do* recognize?",
-                            "Let's find a foothold. What is one term, variable, or concept in there that you understand?",
-                            "Ignore the final answer for a second. What is the very first step the formula or prompt asks for?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
+                        if (isResistance(inputLower)) return "When nothing makes sense, it's easy to completely freeze up. Ignore the question for a second. What is one term or concept in there that you *do* recognize?";
+                        return "Let’s shrink it down. Don't try to solve the whole problem. What’s the first thing you *do* recognize?";
                     }
+                    if (isResistance(inputLower)) return "If it's truly all gibberish right now, your brain might be too tired to process it. Put it away for 30 minutes and come back to it. You aren't failing, you're just fatigued.";
                     return "Good. Start exactly there. Don’t try to solve it fully yet, just define that one small piece. You are building momentum.";
-                }
-            },
-            "burnout and doubt": {
-                autoMode: "Empathetic",
-                handler: (ctx, step, lastInput) => {
-                    if (step === 0) {
-                        const responses = [
-                            "That sounds exhausting. Burnout is a heavy weight to carry. How long have you been feeling like this?",
-                            "It makes complete sense that you are feeling doubtful when you are this drained. When did this feeling start?",
-                            "Burnout can make you question everything, including your major. Have you felt like this all semester?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
-                    }
-                    if (step === 1) {
-                        const responses = [
-                            "That’s a lot to carry. Be honest—when was the last time you actually rested without feeling guilty?",
-                            "Have you taken a genuine break lately? And I mean away from screens and textbooks.",
-                            "Your brain is telling you it's running on empty. How much sleep have you actually been getting?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
-                    }
-                    const finalResponses = [
-                        "Right now, productivity isn’t the goal. Recovery is. Please step away from the screen for 20 minutes to reset.",
-                        "Your brain needs a hard reset. Go do something entirely unrelated to school—grab a snack, take a walk, or just close your eyes.",
-                        "Let's put the academics on pause. Take the next 30 minutes to do absolutely nothing productive. You need to recharge."
-                    ];
-                    return finalResponses[Math.floor(Math.random() * finalResponses.length)];
                 }
             },
             "imposter syndrome": {
                 autoMode: "Grounded",
                 handler: (ctx, step, lastInput) => {
+                    const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "It feels like everyone else gets it except you, right? Imposter syndrome is so incredibly common in college.";
-                    if (step === 1) return "Remember, people only show their successes; they hide their struggles. What specific concept is making you feel behind today?";
+                    if (step === 1) {
+                        if (isResistance(inputLower)) return "It can feel like a general cloud of inadequacy. Let's ground it in reality: what is one specific concept you feel behind on today?";
+                        return "Remember, people only show their successes; they hide their struggles. What specific concept is making you feel behind today?";
+                    }
+                    if (isResistance(inputLower)) return "You don't have to prove anything to me or anyone else today. Just remember that you were accepted into this program for a reason. You belong here.";
                     return "Let’s isolate that one concept and break it down. You aren't behind, you are just in the middle of learning it.";
                 }
             },
             "deadline overload": {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
+                    const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "The panic of multiple deadlines can completely freeze your brain. Let's stop the spiral. What is due absolutely first?";
-                    if (step === 1) return "Perfect. Mentally put the other assignments in a drawer. You are only allowed to look at this one. What is the literal first action you need to take for it?";
+                    
+                    if (step === 1) {
+                        if (isResistance(inputLower)) return "I know it feels like it's all due at once. If you had to pick just one assignment to save your grade, which one is it?";
+                        return "Perfect. Mentally put the other assignments in a drawer. You are only allowed to look at this one. What is the literal first action you need to take for it?";
+                    }
+                    if (isResistance(inputLower)) return "If picking a step is too hard, just open the blank document and type your name. That is a victory right now.";
                     return "Focus only on that step. Set a 15-minute timer and just start that first action. Do not think beyond it yet.";
                 }
             },
             "frustration": {
                 autoMode: "Empathetic",
                 handler: (ctx, step, lastInput) => {
-                    if (step === 0) {
-                        const responses = [
-                            "Frustration is such a heavy, uncomfortable feeling. Is there a specific class or situation triggering this, or is it everything at once?",
-                            "I hear you. Frustration can make you want to throw your laptop. What exactly is causing the friction right now?"
-                        ];
-                        return responses[Math.floor(Math.random() * responses.length)];
+                    const inputLower = (lastInput || "").toLowerCase();
+                    if (step === 0) return "Frustration is such a heavy, uncomfortable feeling. Is there a specific class or situation triggering this, or is it everything at once?";
+                    
+                    if (step === 1) {
+                        if (isResistance(inputLower)) return "It's completely fine if everything just feels generally annoying right now. You don't have to force a reason. Can you do one tiny thing right now to make your space more comfortable?";
+                        return "That sounds incredibly annoying to deal with. When things get this frustrating, it helps to shrink the focus. What is one tiny thing you actually have control over right now?";
                     }
-                    if (step === 1) return "That sounds incredibly annoying to deal with. When things get this frustrating, it helps to shrink the focus. What is one tiny thing you actually have control over right now?";
+                    
+                    // Step 2 Empathy 
+                    if (isResistance(inputLower)) {
+                        return "That is completely okay. You don't have to fix anything or do anything right now. Sometimes the best way to deal with frustration is to just step away, let yourself be annoyed for a bit, and let the wave pass. I'm here when you're ready.";
+                    }
                     return "Focus just on that piece you can control. Sometimes the best way to deal with frustration is to completely step away for 10 minutes, grab some water, and reset.";
                 }
             },
             "sadness": {
                 autoMode: "Empathetic",
                 handler: (ctx, step, lastInput) => {
-                    const safeInput = (lastInput || "").toLowerCase();
+                    const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "I'm really sorry you're feeling sad. It's completely okay to have days like this. Do you know what's making you feel down, or is it just a general heaviness?";
+                    
                     if (step === 1) {
-                        if (safeInput.includes("don't know") || safeInput.length < 15) {
-                            return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
-                        }
+                        if (isResistance(inputLower)) return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
                         return "Thank you for sharing that with me. When you're feeling sad, it's important to be gentle with yourself. Have you done anything kind for yourself today?";
+                    }
+                    
+                    // Step 2 Empathy 
+                    if (isResistance(inputLower)) {
+                        return "That is totally fine. You don't have to do anything right now. Just existing and getting through the day is enough. I'm here for you.";
                     }
                     return "Let's make that the only goal right now. Grab some water, listen to a comfort song, or just rest. Take care of yourself first today.";
                 }
@@ -285,13 +268,17 @@ class ResilientCareEngine {
             "anxiety": {
                 autoMode: "Empathetic",
                 handler: (ctx, step, lastInput) => {
-                    const safeInput = (lastInput || "").toLowerCase();
+                    const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "I'm really sorry you're feeling anxious. Your body is probably in overdrive right now. Do you know what specifically is making you feel this way?";
+                    
                     if (step === 1) {
-                        if (safeInput.includes("no") || safeInput.includes("not sure") || safeInput.includes("i don't")) {
-                            return "That makes sense. Anxiety doesn't always need a logical reason to show up. The coursework will be there later; right now, just focus on taking a few deep breaths.";
-                        }
+                        if (isResistance(inputLower)) return "That makes perfect sense. Anxiety rarely needs a logical reason to show up. Right now, let's just focus on taking a few deep breaths. Can you go grab a glass of cold water?";
                         return "Thank you for sharing that. When you're dealing with anxiety, it's important to let your nervous system reset. Can you go grab some cold water or listen to a comfort song for a few minutes?";
+                    }
+                    
+                    // Step 2 Empathy 
+                    if (isResistance(inputLower)) {
+                        return "You don't have to do anything right now. You are safe. Just take a deep breath. I'm right here with you until it passes.";
                     }
                     return "Take it one small step at a time. Be gentle with yourself today. I'm always here if you need to keep venting.";
                 }
@@ -299,16 +286,30 @@ class ResilientCareEngine {
             "missed exam": {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
-                    const safeInput = (lastInput || "").toLowerCase();
+                    const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet to explain what happened?";
+                    
                     if (step === 1) {
-                        if (safeInput.includes("no") || safeInput.includes("not yet")) return "Okay, review the syllabus first to see if there is a makeup policy. If not, email the professor immediately to politely explain the situation and ask if there are options.";
-                        if (safeInput.includes("yes") || safeInput.includes("already")) return "Good. You took the hardest step. Now we just have to wait for their reply. You did what you could.";
+                        if (inputLower.includes("no") || inputLower.includes("not yet") || isResistance(inputLower)) return "Okay, review the syllabus first to see if there is a makeup policy. If not, email the professor immediately to politely explain the situation and ask if there are options.";
+                        if (inputLower.includes("yes") || inputLower.includes("already")) return "Good. You took the hardest step. Now we just have to wait for their reply. You did what you could.";
                         return "Either way, the best move is to check the syllabus for the makeup policy and email the professor as soon as possible.";
                     }
                     return "Right now, to reduce stress, close your laptop, step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
                 }
             },
+            "general venting": {
+                autoMode: "Balanced",
+                handler: (ctx, step, lastInput) => {
+                    const inputLower = (lastInput || "").toLowerCase();
+                    if (step === 0) return "I hear you. Tell me a bit more about what's going on.";
+                    if (step === 1) {
+                        if (isResistance(inputLower)) return "It's okay if you don't have the words right now. Sometimes just being here is enough. I'm listening.";
+                        return "That makes a lot of sense. What is one small thing you can do right now to make yourself feel just 10% better?";
+                    }
+                    if (isResistance(inputLower)) return "There is absolutely no pressure. Just take it one step at a time today.";
+                    return "Take it one step at a time. You've got this, and I'm here if you need to keep talking.";
+                }
+            }
         };
 
         this.categories = Object.keys(this.intentDatabase);
@@ -352,12 +353,12 @@ class ResilientCareEngine {
             "I'm so confused by this assignment. I don't even know where to start.": "confusing material",
             "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
             "I feel like everyone else gets it and I'm the only one lost.": "imposter syndrome",
+            "Everyone else gets it but me.": "imposter syndrome",
             "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload",
             "Coursework is piling up and I'm stressed.": "coursework stress",
             "I got a bad grade and I feel crushed.": "harsh grading",
             "I'm so lost on this assignment.": "confusing material",
             "I'm totally burned out.": "burnout and doubt",
-            "Everyone else gets it but me.": "imposter syndrome",
             "Too many deadlines at once.": "deadline overload",
             "coursework is piling up and I'm stressed.": "coursework stress",
             "i got a bad grade and I feel crushed.": "harsh grading",
@@ -376,34 +377,28 @@ class ResilientCareEngine {
             mlConfidence = result.scores[0];
         }
 
-        // Tracking Updates
+        let isNewIntent = false;
+
         if (exactMatches[userInput]) {
             this.state.currentIntent = exactMatches[userInput];
             this.state.step = 0;
-        } 
-        else if (this.state.currentIntent !== null) {
-            if (mlConfidence > 0.70 && topMLIntent !== this.state.currentIntent) {
-                this.state.currentIntent = topMLIntent;
-                this.state.step = 0;
-            } else {
-                this.state.step++;
-            }
-        } 
-        else if (mlConfidence > 0.25) {
+            isNewIntent = true;
+        } else if (this.state.currentIntent === null) {
+            this.state.currentIntent = (mlConfidence > 0.40) ? topMLIntent : "general venting";
+            this.state.step = 0;
+            isNewIntent = true;
+        } else if (mlConfidence > 0.85 && topMLIntent !== this.state.currentIntent) {
             this.state.currentIntent = topMLIntent;
             this.state.step = 0;
+            isNewIntent = true;
         }
 
-        // BEHAVIORAL CHECK
-        // ==========================================
-        if (this.state.step === 0 && this.state.currentIntent) {
-            // Log the new session into the browser memory
+        if (isNewIntent && this.state.step === 0) {
             UserMemory.logSession(emotion, this.state.currentIntent);
 
-            // Check if there's a pattern
             const nudge = UserMemory.getNudge();
             if (nudge) {
-                this.state.step = 1; // Skips the standard Step 0 question 
+                this.state.step = 1; 
                 this.remember("assistant", nudge);
                 return { text: nudge, detectedMode: "Empathetic", isComplete: false };
             }
@@ -416,39 +411,32 @@ class ResilientCareEngine {
         if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
             const handler = this.intentDatabase[this.state.currentIntent].handler;
             
-            // USER INPUT EXTRACTS KEYWORDS
             responseText = handler(this.getContext(), this.state.step, userInput); 
-            
             finalMode = this.intentDatabase[this.state.currentIntent].autoMode;
 
             if (this.state.step === 0) {
                 responseText = this.applyEmotionLayer(responseText, emotion);
             }
 
-            if (this.state.step >= 2) {
+            if (!isNewIntent) {
+                const taskIntents = ["coursework stress", "confusing material", "deadline overload"];
+                if (isResistance(userInput) && taskIntents.includes(this.state.currentIntent)) {
+                    console.log("Empathy Hold: Waiting for user to be ready.");
+                } else {
+                    this.state.step++; 
+                }
+            } else {
+                this.state.step++;
+            }
+
+            if (this.state.step > 2) {
                 this.state.currentIntent = null;
                 this.state.step = 0;
                 isComplete = true; 
             }
-        }
-        else {
-            if (emotion === "distressed") {
-                const stressedFallbacks = [
-                    "That sounds really tough to carry. Let’s not solve everything right now—what’s one small thing you can do for yourself today?",
-                    "I hear how heavy this feels. You don't have to figure it all out today. Let's just take a breath.",
-                    "It makes sense you feel that way. Be gentle with yourself right now."
-                ];
-                responseText = stressedFallbacks[Math.floor(Math.random() * stressedFallbacks.length)];
-                finalMode = "Empathetic";
-            } else {
-                const neutralFallbacks = [
-                    "I hear you. I'm currently focused on helping with college stress, but I'm here if you need to vent about academics!",
-                    "Sounds like a plan. Let me know if you run into any overwhelming friction today.",
-                    "Got it. Feel free to keep venting, or choose a new topic starter if you want to switch gears."
-                ];
-                responseText = neutralFallbacks[Math.floor(Math.random() * neutralFallbacks.length)];
-                finalMode = "Grounded";
-            }
+        } else {
+            responseText = "I'm here for you. Tell me a bit more about what's going on.";
+            isComplete = true;
         }
 
         this.remember("assistant", responseText);
@@ -542,7 +530,7 @@ function autoSaveSession(role, text) {
     let history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
     const now = new Date();
     
-    // NEW: Session ID system to properly group sessions
+    // Session ID system to properly group sessions
     let sessionId = localStorage.getItem('activeSessionId');
     if (!sessionId) {
         sessionId = Date.now().toString(); 
@@ -666,7 +654,7 @@ function loadInsightsGraph() {
     try {
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-        // NEW: Group by Session ID to sync with History page
+        // Session ID  sync with History page
         const sessions = [];
         let currentSession = [];
         let lastSessionId = null;
@@ -913,7 +901,6 @@ window.clearGraphData = function() {
     }
 };
 
-// ==========================================
 // 6. HISTORY PAGE LOGIC
 // ==========================================
 
@@ -923,7 +910,7 @@ function loadHistoryPage() {
 
     const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-    // NEW: Group by Session ID to sync perfectly with new sessions
+    // Session ID to sync perfectly with new sessions
     const sessions = [];
     let currentSession = [];
     let lastSessionId = null;
@@ -1015,7 +1002,6 @@ function clearHistoryData() {
     }
 }
 
-// ==========================================
 // 7. SETTINGS PAGE LOGIC
 // ==========================================
 
