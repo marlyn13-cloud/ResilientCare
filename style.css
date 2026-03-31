@@ -52,12 +52,6 @@ html, body {
   transition: grid-template-columns 0.3s ease;
 }
 
-/*
-.app.sidebar-closed {
-    grid-template-columns: 0px 1fr; 
-}
-    */
-
 @media (max-width: 768px) {
     /* Disable the grid completely on phones */
     .app { 
