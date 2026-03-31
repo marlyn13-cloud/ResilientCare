@@ -9,6 +9,10 @@ In progress AI project
 
 - Clean up/ polish code  
 
+HAVE IT DONE BY THE 12TH TOPS
+
+-----------------------------------------------------
+
 - Properly set up the README and documentation
 
-
+HAVE IT DONE BY THE 17TH TOPS
