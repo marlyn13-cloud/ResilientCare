@@ -430,30 +430,6 @@ body {
   max-width: 380px;
   line-height: 1.7;
 }
- 
-.prompt-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  max-width: 520px;
-}
- 
-.chip {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 13px;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-}
- 
-.chip:hover { 
-    background: var(--bg-main); 
-    color: var(--text-main); 
-    border-color: var(--primary-accent); }
 
 .icon-btn{
     background: transparent;
