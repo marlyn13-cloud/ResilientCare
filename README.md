@@ -4,7 +4,7 @@
   
 - A secure AI mental wellness companion powered by a machine learning model.
 
-- ResilientCare is an intelligent, browser based therapist like agent designed specifically to help users process academic stress, academic burnout, and academic anxiety. Unlike traditional AI applications that send sensitive personal data to cloud APIs, ResilientCare runs 100% locally in the user's browser using WebAssembly and Hugging Face models.
+- ResilientCare is an intelligent, browser based therapist like agent designed specifically to help users *process academic stress, academic burnout, and academic anxiety.* Unlike traditional AI applications that send sensitive personal data to cloud APIs, ResilientCare runs 100% locally in the user's browser using **WebAssembly** and **Hugging Face models.**
 
 - This project demonstrates a production ready implementation of Client-Side Machine Learning, prioritizing  user privacy, zero network latency, and zero server costs.
 
