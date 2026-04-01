@@ -2,7 +2,7 @@
 
 ### OVERVIEW
   
-- A secure AI mental wellness companion powered by a machine learning model.
+- A secure AI mental wellness companion powered by a machine learning model. ResilientCare is an AI Driven Mental Health Coach which specializes in day to day conflicts, helping the user handle your emotions in any MICRO situation. Students specifically often struggle with Daily Friction. Daily Friction is defined as conflicts that aren't classified as a mental crisis.
 
 - ResilientCare is an intelligent, browser based therapist like agent designed specifically to help users *process academic stress, academic burnout, and academic anxiety.* Unlike traditional AI applications that send sensitive personal data to cloud APIs, ResilientCare runs 100% locally in the user's browser using **WebAssembly** and **Hugging Face models.**
 
