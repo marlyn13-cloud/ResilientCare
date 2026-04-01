@@ -187,7 +187,7 @@ class ResilientCareEngine {
                 autoMode: "Balanced",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
-                    let subject = "this class";
+                    let subject = "this material";
                     if (inputLower.includes("math") || inputLower.includes("calculus") || inputLower.includes("algebra")) subject = "Math";
                     if (inputLower.includes("science") || inputLower.includes("biology") || inputLower.includes("chemistry")) subject = "Science";
                     if (inputLower.includes("code") || inputLower.includes("computer") || inputLower.includes("java")) subject = "Computer Science";
