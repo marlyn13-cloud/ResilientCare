@@ -21,9 +21,9 @@ The core ML pipeline is built on Transformers.js, allowing NLP models to run dir
 
   1b. **Sentiment & Emotion Analysis:** Fine-tuned distilbert-base-uncased-finetuned-sst-2-english model to assess the *emotional weight* of user input in real-time.
 
-  1c. **Quantization & Caching:** Models are quantized for the web, resulting in sub-30MB payloads that are cached locally on the user's device which enables instant load times for all future sessions.
+  1c. **Caching:** Models are quantized for the web, resulting in sub-30MB payloads that are cached locally on the user's device, which enables instant load times for all future sessions.
 
-2. **Context-Aware Routing & Empathy State Machine** - 
+2. **Context Routing & Empathy State Machine** - 
 Because pure LLM text-generation can hallucinate and is generally unsafe for mental health contexts, ResilientCare utilizes a *deterministic Conversational Routing Engine*:
 
   2a. **Resistance Detection:** The system  monitors user inputs for cognitive resistance *(e.g., short replies, "idk", "nothing")*. If resistance is detected, the AI automatically shifts from *"Direct Mode" (task-oriented)* to *"Empathetic Mode" (validating and grounding)*.
