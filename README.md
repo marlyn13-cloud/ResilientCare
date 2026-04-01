@@ -50,27 +50,27 @@ Because pure LLM text-generation can hallucinate and is generally unsafe for men
    * **Model A (Intent):** A Zero-Shot classifier (e.g., MobileBERT via WebAssembly) categorizes the topic (e.g., "Anxiety", "Frustration").
    * **Model B (Sentiment):** A lightweight sequence classifier evaluates distress levels.
 4. **Local State Machine (Execution Layer):** The app routes the user to a locally stored conversational tree for the detected intent.
+----------------------------------------------------------------------------------
+### Sample AI Example: Burnout & Doubt
+This scenario demonstrates how the  AI pipeline processes severe emotional exhaustion by prioritizing empathetic validation and cognitive recovery over task productivity.
 
-## Sample Workflow: Coursework Stress
-
-This scenario demonstrates how the AI processes a high stress input by balancing empathetic validation with actionable, step-by-step task isolation.
-
-**1. Initial Input**
-> **User:** *"I feel stressed so much coursework has to get done."*
-* **NLP Engine:** Evaluates the text and outputs `Distress: 85%` and `Intent: Task Overload`.
+**1. Initial Input & Inference**
+> **User:** *"I'm completely burned out. I don't know why I'm even in this major."*
+* **NLP Engine:** Evaluates the text and outputs `Distress: 85%` and `Intent: Burnout and Doubt`.
 
 **2. State Machine Routing**
-* **System Action:** The Task Routing protocol activates. It acknowledges the emotional stress first, then asks the user to list what is due to break the cognitive spiral.
-> **User:** *"I have 2 assignments due and also a project due soon."*
+* **System Action:** The Empathetic Routing protocol activates. It validates the emotional weight of the statement before gently asking for a timeline.
+> **AI:** *"That sounds exhausting. Burnout is a heavy weight to carry. How long have you been feeling like this?"*
+> **User:** *"not sure"*
 
-**3. Task Isolation**
-* **System Action:** The AI ignores the overall volume of work and forces the user to focus on a single task.
-> **AI:** *"For the most urgent item, what is the absolute smallest step you can take to get started?"*
-> **User:** *"The 2 assignments."*
+**3. Resistance Handling**
+* **System Action:** The engine detects uncertainty. Instead of pushing for a timeline, the AI validates the brain fog and uses a self-care metric.
+> **AI:** *"It's okay if you're not sure. When everything blurs together, it's hard to track time. When was the last time you actually rested without feeling guilty?"*
+> **User:** *"a couple of days ago"*
 
 **4. Resolution**
-* **System Action:** The AI provides concrete help to the user to build momentum.
-> **AI:** *"Awesome. Close your other tabs, set a short timer, and focus just on that piece. Take a break right after."*
+* **System Action:** Recognizes a lack of rest and the AI removes the pressure to be productive and recommends stepping away for a bit.
+> **AI:** *"Right now, productivity isn't the goal. Recovery is. Please step away from the screen for 20 minutes to reset. Your brain needs a hard reset."*
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ This scenario demonstrates how the AI processes a high stress input by balancing
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 
-# ⚙️ Engineering Trade-Offs & Decisions
+# ⚙️ Engineering Decisions
 
 - Why Transformers.js over a Cloud LLM API?
   
