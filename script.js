@@ -136,15 +136,24 @@ class ResilientCareEngine {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
+                    
+                    // SMART EXTRACTION: Find out what kind of work and how much
                     let taskType = "work";
+                    let taskCount = "a mountain of";
                     if (inputLower.includes("essay") || inputLower.includes("paper")) taskType = "writing";
-                    if (inputLower.includes("code") || inputLower.includes("project")) taskType = "project";
+                    if (inputLower.includes("code") || inputLower.includes("project")) taskType = "projects";
+                    if (inputLower.includes("exam") || inputLower.includes("midterm")) taskType = "studying";
+                    
+                    const numMatch = inputLower.match(/\b(\d+|two|three|four|five)\b/);
+                    if (numMatch) taskCount = numMatch[0];
                     
                     if (step === 0) {
-                        return `It sounds like you have a mountain of ${taskType} on your plate. To stop the spiral, let's get it out of your head. Type out a list of exactly what is due.`;
+                        return `It sounds like you have ${taskCount} ${taskType} on your plate right now. To stop the spiral, let's get it out of your head. Type out a quick list of exactly what is due.`;
                     }
                     if (step === 1) {
-                        if (isResistance(inputLower)) return "It's totally okay if your brain is blanking or if there's too much to list. Let's just pick one tiny thing—what is one class you know you have work for?";
+                        if (isResistance(inputLower)) return "It's totally okay if your brain is blanking. Let's just pick one tiny thing—what is one class you know you have work for?";
+                        // DYNAMIC BRANCHING: Acknowledge their list
+                        if (inputLower.length > 20) return "Okay, seeing it written out helps. Put the rest of that list in a mental drawer for now. For the very first item, what is the absolute smallest step you can take?";
                         return "Good. Now, put the rest of the list in a mental drawer. For the most urgent item, what is the absolute smallest step you can take to get started?";
                     }
                     if (isResistance(inputLower)) return "If you can't think of a first step right now, just start by opening the document or reading the prompt. Set a 5-minute timer and just look at it. You can do this.";
@@ -159,10 +168,8 @@ class ResilientCareEngine {
                     
                     if (step === 1) {
                         if (isResistance(inputLower)) return "It's okay if you're not sure. When everything blurs together, it's hard to track time. When was the last time you actually rested without feeling guilty?";
-                        return "That’s a lot to carry. Be honest—when was the last time you actually rested without looking at a screen or a textbook?";
+                        return "That’s a long time to carry that weight. Be honest—when was the last time you actually rested without looking at a screen or thinking about your major?";
                     }
-                    
-                    // Step 2 Empathy 
                     if (isResistance(inputLower)) {
                         return "It's okay if you have no energy left to even figure it out. Please just close your laptop and let yourself exist for a bit. The work will survive without you for an hour.";
                     }
@@ -173,7 +180,13 @@ class ResilientCareEngine {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "That feedback probably felt incredibly personal. Getting a bad grade is always a punch to the gut. What part of the feedback stung the most?";
+                    
+                    // SMART EXTRACTION: What kind of assignment?
+                    let task = "assignment";
+                    const taskMatch = inputLower.match(/(exam|project|paper|essay|midterm|quiz|code)/i);
+                    if (taskMatch) task = taskMatch[0];
+
+                    if (step === 0) return `That feedback probably felt incredibly personal. Getting a bad grade on a ${task} is always a punch to the gut. What part of the feedback stung the most?`;
                     
                     if (step === 1) {
                         if (isResistance(inputLower)) return "It's okay if it all just hurts to look at right now. Try to take a breath and just look at the rubric. What specific area lost the most points?";
@@ -187,16 +200,20 @@ class ResilientCareEngine {
                 autoMode: "Balanced",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
-                    let subject = "This material";
-                    if (inputLower.includes("math") || inputLower.includes("calculus") || inputLower.includes("algebra")) subject = "Math";
-                    if (inputLower.includes("science") || inputLower.includes("biology") || inputLower.includes("chemistry")) subject = "Science";
-                    if (inputLower.includes("code") || inputLower.includes("computer") || inputLower.includes("java")) subject = "Computer Science";
+                    const allText = (ctx + " " + inputLower).toLowerCase();
+                    
+                    // SMART EXTRACTION: Look for specific course codes (e.g., CSIT 313) or subjects (e.g., Biology)
+                    let specificSubject = "This material";
+                    const courseMatch = allText.match(/([a-z]+\s?\d{3}|biology|math|csit|chemistry|human-computer interaction|programming|science)/i);
+                    if (courseMatch) {
+                        specificSubject = courseMatch[0];
+                    }
 
-                    if (step === 0) return `I completely understand. ${subject} can feel like a foreign language sometimes. Where exactly are you stuck?`;
+                    if (step === 0) return `I completely understand. ${specificSubject} can feel like a foreign language sometimes. Where exactly are you stuck?`;
                     
                     if (step === 1) {
-                        if (isResistance(inputLower)) return "When nothing makes sense, it's easy to completely freeze up. Ignore the question for a second. What is one term or concept in there that you *do* recognize?";
-                        return "Let’s shrink it down. Don't try to solve the whole problem. What’s the first thing you *do* recognize?";
+                        if (isResistance(inputLower)) return `When nothing makes sense, it's easy to completely freeze up. Ignore the big picture for a second. What is one term in ${specificSubject} that you *do* recognize?`;
+                        return "Let’s shrink it down. Don't try to solve the whole problem. Just pick out one small piece that you do understand or recognize.";
                     }
                     if (isResistance(inputLower)) return "If it's truly all gibberish right now, your brain might be too tired to process it. Put it away for 30 minutes and come back to it. You aren't failing, you're just fatigued.";
                     return "Good. Start exactly there. Don’t try to solve it fully yet, just define that one small piece. You are building momentum.";
@@ -206,9 +223,9 @@ class ResilientCareEngine {
                 autoMode: "Grounded",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "It feels like everyone else gets it except you, right? Imposter syndrome is so incredibly common in college.";
+                    if (step === 0) return "It feels like everyone else gets it except you, right? Imposter syndrome is so incredibly common, especially when tackling difficult degrees.";
                     if (step === 1) {
-                        if (isResistance(inputLower)) return "It can feel like a general cloud of inadequacy. Let's ground it in reality: what is one specific concept you feel behind on today?";
+                        if (isResistance(inputLower)) return "It can feel like a general cloud of inadequacy. Let's ground it in reality: what is one specific concept or project you feel behind on today?";
                         return "Remember, people only show their successes; they hide their struggles. What specific concept is making you feel behind today?";
                     }
                     if (isResistance(inputLower)) return "You don't have to prove anything to me or anyone else today. Just remember that you were accepted into this program for a reason. You belong here.";
@@ -219,7 +236,13 @@ class ResilientCareEngine {
                 autoMode: "Direct",
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "The panic of multiple deadlines can completely freeze your brain. Let's stop the spiral. What is due absolutely first?";
+                    
+                    // SMART EXTRACTION
+                    let timeFrame = "soon";
+                    const timeMatch = inputLower.match(/(tomorrow|tonight|midnight|this week|in \d+ hours)/i);
+                    if (timeMatch) timeFrame = timeMatch[0];
+
+                    if (step === 0) return `The panic of deadlines creeping up ${timeFrame} can completely freeze your brain. Let's stop the spiral. What is due absolutely first?`;
                     
                     if (step === 1) {
                         if (isResistance(inputLower)) return "I know it feels like it's all due at once. If you had to pick just one assignment to save your grade, which one is it?";
@@ -234,17 +257,14 @@ class ResilientCareEngine {
                 handler: (ctx, step, lastInput) => {
                     const inputLower = (lastInput || "").toLowerCase();
                     if (step === 0) return "Frustration is such a heavy, uncomfortable feeling. Is there a specific class or situation triggering this, or is it everything at once?";
-                    
                     if (step === 1) {
                         if (isResistance(inputLower)) return "It's completely fine if everything just feels generally annoying right now. You don't have to force a reason. Can you do one tiny thing right now to make your space more comfortable?";
                         return "That sounds incredibly annoying to deal with. When things get this frustrating, it helps to shrink the focus. What is one tiny thing you actually have control over right now?";
                     }
-                    
-                    // Step 2 Empathy 
                     if (isResistance(inputLower)) {
                         return "That is completely okay. You don't have to fix anything or do anything right now. Sometimes the best way to deal with frustration is to just step away, let yourself be annoyed for a bit, and let the wave pass. I'm here when you're ready.";
                     }
-                    return "Focus just on that piece you can control. Sometimes the best way to deal with frustration is to completely step away for 10 minutes, grab some water, and reset.";
+                    return "OK. Focus just on that piece you can control. Sometimes the best way to deal with frustration is to completely step away for 10 minutes, grab some water, and reset.";
                 }
             },
             "sadness": {
@@ -254,11 +274,9 @@ class ResilientCareEngine {
                     if (step === 0) return "I'm really sorry you're feeling sad. It's completely okay to have days like this. Do you know what's making you feel down, or is it just a general heaviness?";
                     
                     if (step === 1) {
-                        if (isResistance(inputLower)) return "That makes sense. Sometimes the heaviness just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
+                        if (isResistance(inputLower)) return "That makes sense. Sometimes it just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
                         return "Thank you for sharing that with me. When you're feeling sad, it's important to be gentle with yourself. Have you done anything kind for yourself today?";
                     }
-                    
-                    // Step 2 Empathy 
                     if (isResistance(inputLower)) {
                         return "That is totally fine. You don't have to do anything right now. Just existing and getting through the day is enough. I'm here for you.";
                     }
@@ -275,8 +293,6 @@ class ResilientCareEngine {
                         if (isResistance(inputLower)) return "That makes perfect sense. Anxiety rarely needs a logical reason to show up. Right now, let's just focus on taking a few deep breaths. Can you go grab a glass of cold water?";
                         return "Thank you for sharing that. When you're dealing with anxiety, it's important to let your nervous system reset. Can you go grab some cold water or listen to a comfort song for a few minutes?";
                     }
-                    
-                    // Step 2 Empathy 
                     if (isResistance(inputLower)) {
                         return "You don't have to do anything right now. You are safe. Just take a deep breath. I'm right here with you until it passes.";
                     }
@@ -371,7 +387,7 @@ class ResilientCareEngine {
         let topMLIntent = null;
         let mlConfidence = 0;
 
-        if (intentClassifier && !exactMatches[userInput]) {
+        if (typeof intentClassifier !== 'undefined' && intentClassifier && !exactMatches[userInput]) {
             const result = await intentClassifier(userInput, this.categories);
             topMLIntent = result.labels[0];
             mlConfidence = result.scores[0];
@@ -394,13 +410,15 @@ class ResilientCareEngine {
         }
 
         if (isNewIntent && this.state.step === 0) {
-            UserMemory.logSession(emotion, this.state.currentIntent);
+            if (typeof UserMemory !== 'undefined') UserMemory.logSession(emotion, this.state.currentIntent);
 
-            const nudge = UserMemory.getNudge();
-            if (nudge) {
-                this.state.step = 1; 
-                this.remember("assistant", nudge);
-                return { text: nudge, detectedMode: "Empathetic", isComplete: false };
+            if (typeof UserMemory !== 'undefined') {
+                const nudge = UserMemory.getNudge();
+                if (nudge) {
+                    this.state.step = 1; 
+                    this.remember("assistant", nudge);
+                    return { text: nudge, detectedMode: "Empathetic", isComplete: false };
+                }
             }
         }
 
@@ -418,16 +436,7 @@ class ResilientCareEngine {
                 responseText = this.applyEmotionLayer(responseText, emotion);
             }
 
-            if (!isNewIntent) {
-                const taskIntents = ["coursework stress", "confusing material", "deadline overload"];
-                if (isResistance(userInput) && taskIntents.includes(this.state.currentIntent)) {
-                    console.log("Empathy Hold: Waiting for user to be ready.");
-                } else {
-                    this.state.step++; 
-                }
-            } else {
-                this.state.step++;
-            }
+            this.state.step++;
 
             if (this.state.step > 2) {
                 this.state.currentIntent = null;
