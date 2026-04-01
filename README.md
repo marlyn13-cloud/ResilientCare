@@ -42,6 +42,7 @@ Because pure LLM text-generation can hallucinate and is generally unsafe for men
 
 ## Architecture 1: The Privacy NLP Router
 **Use Case:** Healthcare apps, secure journaling, mental wellness (e.g., ResilientCare).
+
 **Core Objective:** Zero data exfiltration. Ensure sensitive text never leaves the user's device while maintaining strict clinical safety.
 
 ### The Pipeline Workflow
@@ -80,7 +81,7 @@ This scenario demonstrates how the  AI pipeline processes severe emotional exhau
 
 -  **Absolute Privacy:** No backend database. No API calls to OpenAI/Anthropic. All chat history and insights are stored securely in local browser storage.
 
--  **Dynamic Theme Engine:** Fully integrated CSS architecture supporting multiple psychological color profiles *(Midnight Dark, Cocoa Cupcake Pink, Calming Blue)*.
+-  **(SETTINGS) Theme Engine:** Fully integrated CSS architecture supporting multiple psychological color profiles *(Dark, Cocoa Cupcake Pink, Calming Blue)*.
 
 -  **Interactive Insights:** Real-time streak tracking, session counting, and mapping of user entries.
 
