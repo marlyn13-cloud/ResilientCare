@@ -19,7 +19,7 @@ function isCrisis(text) {
 }
 
 const CRISIS_RESPONSE = {
-    text: "I need to pause here because what you shared sounds serious, and your safety matters more than anything else right now.\n\nPlease reach out to someone who can truly help:\n• Crisis Text Line: Text HOME to 741741\n• 988 Suicide & Crisis Lifeline: Call or text 988\n• SAMHSA Helpline: 1-800-662-4357\n\nYou don't have to carry this alone. Are you somewhere safe right now?",
+    text: "I need to pause here because what you shared sounds serious, and your safety matters more than anything else right now.\n\nPlease reach out to someone who can truly help:\n• Crisis Text Line: Text HOME to 741741\n• 988 Suicide & Crisis Lifeline: Call or text 988\n• SAMHSA Helpline: 1-800-662-4357\n\nYou don't have to carry this alone.",
     detectedMode: "Empathetic",
     detectedIntent: "crisis",
     emotionalTone: "distressed",
