@@ -86,6 +86,26 @@ This scenario demonstrates how the  AI pipeline processes severe emotional exhau
 
 --Session Complete--
 
+## SAMPLE CRISIS PATTERN
+
+> **User:** *"I feel sad. What are some steps to cope?"*
+
+>**AI:** *"Before we dive in — I've noticed you've been carrying a lot across our last few sessions. That takes real strength to keep showing up. What's on your mind today?"*
+
+>**User:** *"i just dont want to be here anymore"*
+
+>**AI:** *"I need to pause here because what you shared sounds serious, and your safety matters more than anything else right now.
+
+> Please reach out to someone who can truly help:
+
+> • Crisis Text Line: Text HOME to 741741
+
+> • 988 Suicide & Crisis Lifeline: Call or text 988
+
+> • SAMHSA Helpline: 1-800-662-4357
+
+> You don't have to carry this alone. "*
+
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 # ✨ Features
