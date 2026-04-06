@@ -1,467 +1,790 @@
-// 1. AI BRAIN & MEMORY ENGINE
-// ==========================================
-let sentimentModel = null;
-let intentClassifier = null; 
+// ─────────────────────────────────────────────────────────────
+// SECTION 1: CRISIS SAFETY 
+// ─────────────────────────────────────────────────────────────
 
-async function loadAIModel() {
+const CRISIS_PATTERNS = [
+    /kill\s*(my)?self/i, /want\s*to\s*die/i, /end\s*my\s*life/i,
+    /\bsuicid/i, /self[\s-]?harm/i, /hurt\s*myself/i,
+    /no\s*reason\s*to\s*live/i, /wish\s*(i\s*was|i\s*were)\s*dead/i,
+    /can'?t\s*go\s*on\s*(anymore|like this)/i,
+    /don'?t\s*want\s*to\s*(be here|exist)/i,
+];
+
+function isCrisis(text) {
+    return CRISIS_PATTERNS.some(p => p.test(text));
+}
+
+const CRISIS_RESPONSE = {
+    text: "I need to pause here because what you shared sounds serious, and your safety matters more than anything else right now.\n\nPlease reach out to someone who can truly help:\n• Crisis Text Line: Text HOME to 741741\n• 988 Suicide & Crisis Lifeline: Call or text 988\n• SAMHSA Helpline: 1-800-662-4357\n\nYou don't have to carry this alone. Are you somewhere safe right now?",
+    detectedMode: "Empathetic",
+    detectedIntent: "crisis",
+    emotionalTone: "distressed",
+    isComplete: true,
+    suggestedChips: [],
+};
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 2: MODEL LOADER
+// ─────────────────────────────────────────────────────────────
+
+let _embedder   = null;
+let _classifier = null;
+let _sentiment  = null;
+let _seedEmbeddings = {};
+let _modelsReady = false;
+
+//  descriptive labels  improve zero-shot accuracy
+const INTENT_LABELS = {
+    coursework_stress:  "student overwhelmed by too many assignments, coursework piling up, too much work due at once",
+    burnout_doubt:      "student completely burned out, exhausted, questioning their major or whether college is worth it",
+    harsh_grading:      "student received a bad grade, harsh feedback, unfair grading, feeling crushed by a poor score",
+    confusing_material: "student confused by course material, doesn't understand the assignment or subject, feels lost academically",
+    imposter_syndrome:  "student feels like everyone else understands but them, feels behind peers, feels like they don't belong",
+    deadline_panic:     "student panicking about approaching deadlines, multiple things due soon, feeling out of time",
+    exam_anxiety:       "student anxious about an upcoming exam, worried about failing a test, dreading a midterm or final",
+    procrastination:    "student can't start their work, avoiding tasks, stuck in procrastination, can't bring themselves to begin",
+    focus_struggles:    "student can't concentrate, mind keeps wandering, struggling to stay focused while studying",
+    peer_comparison:    "student comparing themselves negatively to classmates, feeling behind others socially or academically",
+    frustration:        "student feeling frustrated, annoyed, or irritated about something academic",
+    sadness:            "student feeling sad, low, down, or emotionally heavy",
+    anxiety:            "student feeling generally anxious, overwhelmed emotionally, or in a state of worry",
+    missed_deadline:    "student missed an exam, missed a deadline, forgot to submit something, needs damage control",
+    general_venting:    "student needs to vent or talk, not sure what is wrong, general stress without a specific issue",
+};
+
+// Seed phrases per intent 
+const INTENT_SEEDS = {
+    coursework_stress:  ["so much work due","assignments piling up","overwhelmed by coursework","can't keep up with everything","too many things to submit"],
+    burnout_doubt:      ["completely burned out","no motivation left","questioning my major","don't know why I'm in school","exhausted and disconnected"],
+    harsh_grading:      ["got a terrible grade","professor graded unfairly","bad feedback on my assignment","crushed by my score","failed and feel awful"],
+    confusing_material: ["I don't understand anything","lost on this assignment","the material makes no sense","have no idea where to start","completely confused"],
+    imposter_syndrome:  ["everyone else gets it but me","I feel like I don't belong here","everyone seems smarter than me","I'm falling behind everyone"],
+    deadline_panic:     ["everything is due soon","three deadlines this week","I have no time left","running out of time for assignments"],
+    exam_anxiety:       ["terrified about my exam","can't stop worrying about my test","dreading this midterm","anxiety before exam"],
+    procrastination:    ["can't bring myself to start","I keep avoiding my work","stuck and not doing anything","won't let myself begin"],
+    focus_struggles:    ["I can't concentrate at all","my mind keeps wandering","I can't focus on studying","distracted from my work"],
+    peer_comparison:    ["everyone else is doing better","my classmates have it together","I feel behind all my peers"],
+    frustration:        ["so frustrated with everything","this is so annoying","I'm fed up with school","everything is making me angry"],
+    sadness:            ["feeling really sad","I'm in a low mood","just feel heavy and down","sad for no reason"],
+    anxiety:            ["feeling so anxious","I'm overwhelmed with worry","anxiety is through the roof","can't calm my nerves"],
+    missed_deadline:    ["I missed my exam","I forgot to submit","I skipped class and missed something important","missed a deadline"],
+    general_venting:    ["I just need to vent","everything feels like too much","I don't even know what's wrong","just having a hard time"],
+};
+
+async function loadModels() {
     if (!window.transformers) {
-        console.warn("Transformers.js not loaded. Check your HTML CDN.");
+        console.warn("Transformers.js not loaded.");
         return;
     }
+    const { pipeline, env } = window.transformers;
+    env.allowLocalModels = false;
 
-    const indicator = document.getElementById('save-indicator');
-    if (indicator) indicator.innerText = "Downloading AI Models... (Once)";
+    const setStatus = (msg) => {
+        const el = document.getElementById("save-indicator");
+        if (el) el.innerText = msg;
+    };
 
-    try {
-        sentimentModel = await window.transformers.pipeline(
-            "sentiment-analysis",
-            "Xenova/distilbert-base-uncased-finetuned-sst-2-english"
-        );
+    setStatus("Loading sentiment model…");
+    _sentiment  = await pipeline("sentiment-analysis", "Xenova/distilbert-base-uncased-finetuned-sst-2-english");
 
-        intentClassifier = await window.transformers.pipeline(
-            "zero-shot-classification",
-            "Xenova/mobilebert-uncased-mnli"
-        );
+    setStatus("Loading intent model…");
+    _classifier = await pipeline("zero-shot-classification", "Xenova/mobilebert-uncased-mnli");
 
-        console.log("AI Models Loaded Successfully");
-        if (indicator) {
-            indicator.innerText = "AI Ready ✓";
-            setTimeout(() => { indicator.innerText = "Auto-saved ✓"; }, 2000);
-        }
-    } catch (error) {
-        console.error("Model loading failed:", error);
+    setStatus("Loading embedding model…");
+    _embedder   = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2", { pooling: "mean", normalize: true });
+
+    setStatus("Building intent index…");
+    await _buildSeedEmbeddings();
+
+    _modelsReady = true;
+    console.log("ResilientCare v3: all models ready.");
+    setStatus("AI Ready ✓");
+    setTimeout(() => setStatus("Auto-saved ✓"), 2000);
+}
+
+async function _buildSeedEmbeddings() {
+    for (const [intent, seeds] of Object.entries(INTENT_SEEDS)) {
+        const vecs = await Promise.all(seeds.map(s => _embed(s)));
+        _seedEmbeddings[intent] = _meanVec(vecs);
     }
 }
 
-loadAIModel();
+loadModels();
 
-async function detectEmotion(text){
-    if(!sentimentModel) return "neutral";
-    const result = await sentimentModel(text);
-    if(result && result[0] && result[0].label === "NEGATIVE") return "distressed";
+// ─────────────────────────────────────────────────────────────
+// SECTION 3: VECTOR MATH
+// ─────────────────────────────────────────────────────────────
+
+async function _embed(text) {
+    const out = await _embedder(text);
+    return Array.from(out.data);
+}
+
+function _dot(a, b) {
+    let s = 0;
+    for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+    return s;
+}
+
+function _norm(a) { return Math.sqrt(_dot(a, a)); }
+
+function _cosine(a, b) {
+    const d = _norm(a) * _norm(b);
+    return d === 0 ? 0 : _dot(a, b) / d;
+}
+
+function _meanVec(vecs) {
+    const len = vecs[0].length;
+    const out = new Array(len).fill(0);
+    for (const v of vecs) for (let i = 0; i < len; i++) out[i] += v[i];
+    return out.map(x => x / vecs.length);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 4: INTENT DETECTION ENGINE
+// ─────────────────────────────────────────────────────────────
+
+async function detectIntent(text) {
+    const intents = Object.keys(INTENT_LABELS);
+
+    let zsScores = {};
+    if (_classifier) {
+        const zs = await _classifier(text, Object.values(INTENT_LABELS));
+        zs.labels.forEach((label, i) => {
+            const key = intents.find(k => INTENT_LABELS[k] === label) || "general_venting";
+            zsScores[key] = zs.scores[i];
+        });
+    }
+
+    let cosScores = {};
+    if (_embedder && Object.keys(_seedEmbeddings).length > 0) {
+        const inputVec = await _embed(text);
+        for (const [intent, seedVec] of Object.entries(_seedEmbeddings)) {
+            cosScores[intent] = Math.max(0, _cosine(inputVec, seedVec));
+        }
+    }
+
+    const fusedScores = {};
+    const hasEmbedder = _embedder && Object.keys(_seedEmbeddings).length > 0;
+    for (const intent of intents) {
+        const zs  = zsScores[intent]  ?? (1 / intents.length);
+        const cos = cosScores[intent] ?? 0;
+        fusedScores[intent] = hasEmbedder ? (0.6 * zs + 0.4 * cos) : zs;
+    }
+
+    const top = Object.entries(fusedScores).sort((a, b) => b[1] - a[1])[0];
+    return { intent: top[0], confidence: top[1], allScores: fusedScores };
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 5: EMOTION LAYER
+// ─────────────────────────────────────────────────────────────
+
+async function detectEmotion(text) {
+    if (!_sentiment) return "neutral";
+    const result = await _sentiment(text);
+    if (!result || !result[0]) return "neutral";
+    const { label, score } = result[0];
+    if (label === "NEGATIVE" && score > 0.92) return "distressed";
+    if (label === "NEGATIVE" && score > 0.75) return "anxious";
+    if (label === "NEGATIVE") return "frustrated";
     return "neutral";
 }
 
-// THE EMPATHY LAYER (RESISTANCE DETECTION)
-// ==============================================
-function isResistance(text) {
-    const t = text.toLowerCase().trim();
-    
-    // 1. If user say a short positive word, they are NOT resisting! Lets the script continue.
-    if (t === "yes" || t === "yeah" || t === "yep" || t === "sure" || t === "ok" || t === "okay") {
-        return false; 
-    }
-    
-    // 2. Otherwise, check for standard resistance words or super short answers
-    return t.includes("idk") || t.includes("don't know") || t.includes("not sure") || t.includes("nothing") || t.length <= 4;
-}
-
-// LONG-TERM MEMORY & ANALYTICS ENGINE (STREAKS, MOOD LOG)
-// ==========================================
-const UserMemory = {
-    getProfile: function() {
-        return JSON.parse(localStorage.getItem('rc_userProfile')) || {
-            totalSessions: 0,
-            streakCount: 0,
-            lastVisitDate: null,
-            moodLog: [] 
-        };
-    },
-
-    saveProfile: function(profile) {
-        localStorage.setItem('rc_userProfile', JSON.stringify(profile));
-    },
-
-    logSession: function(emotion, intent) {
-        let profile = this.getProfile();
-        const today = new Date().toLocaleDateString();
-
-        if (profile.lastVisitDate !== today) {
-            let yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            
-            if (profile.lastVisitDate === yesterday.toLocaleDateString()) {
-                profile.streakCount++; 
-            } else {
-                profile.streakCount = 1; 
-            }
-            profile.totalSessions++;
-            profile.lastVisitDate = today;
-        }
-
-        profile.moodLog.push({ date: today, emotion: emotion, intent: intent });
-        if (profile.moodLog.length > 14) profile.moodLog.shift();
-
-        this.saveProfile(profile);
-        return profile;
-    },
-
-    getNudge: function() {
-        let profile = this.getProfile();
-        if (profile.moodLog.length < 3) return null; 
-
-        const recentLogs = profile.moodLog.slice(-3);
-        
-        //  Stress Nudge
-        const consecutiveStress = recentLogs.every(log => log.emotion === 'distressed' || log.intent === 'coursework stress' || log.intent === 'burnout and doubt');
-        if (consecutiveStress) {
-            return "I noticed you've been feeling stressed or overwhelmed for the last few sessions. It takes a lot of strength to keep checking in. How are you holding up today?";
-        }
-
-        // Milestone Nudge
-        if (profile.totalSessions === 5 && profile.moodLog.length === 5) {
-            return "By the way, this is your 5th session with me! I'm really proud of you for consistently taking time for your mental health. What's on your mind today?";
-        }
-
-        return null;
-    }
+const EMPATHY_PREFIXES = {
+    distressed: ["I can tell this is really weighing on you right now. ","That sounds incredibly hard to carry. ","I hear how much this is affecting you. "],
+    anxious:    ["That kind of pressure can feel so suffocating. ","It makes total sense that you're feeling anxious about this. ","Your nervous system is clearly in overdrive right now. "],
+    frustrated: ["That frustration is completely valid. ","Ugh, that kind of friction is genuinely exhausting. ","I'd be frustrated too — this is a lot. "],
 };
 
-// 2.AI ENGINE
-// ==========================================
+function applyEmotionLayer(text, emotion, turn) {
+    if (turn > 0) return text;
+    const prefixes = EMPATHY_PREFIXES[emotion];
+    if (!prefixes) return text;
+    return prefixes[Math.floor(Math.random() * prefixes.length)] + text;
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 6: ENTITY EXTRACTOR
+// ─────────────────────────────────────────────────────────────
+
+function extractEntities(history) {
+    const fullText = history.map(m => m.text).join(" ");
+    const e = { subject: null, task: null, deadline: null, grade: null, professor: null };
+
+    const courseCode = fullText.match(/\b([A-Z]{2,5}\s?\d{3}[A-Z]?)\b/i);
+    if (courseCode) e.subject = courseCode[1];
+
+    if (!e.subject) {
+        const sub = fullText.match(/\b(organic chemistry|biology|calculus|statistics|physics|history|economics|psychology|computer science|english|philosophy|accounting|anatomy|algebra|programming|data structures|algorithms|machine learning|sociology)\b/i);
+        if (sub) e.subject = sub[1];
+    }
+
+    const task = fullText.match(/\b(essay|paper|project|midterm|final|exam|quiz|lab report|presentation|thesis|assignment|homework|problem set|coding assignment)\b/i);
+    if (task) e.task = task[1];
+
+    const deadline = fullText.match(/\b(tomorrow|tonight|midnight|this week|friday|monday|tuesday|wednesday|thursday|saturday|sunday|in \d+ (hours?|days?)|next week)\b/i);
+    if (deadline) e.deadline = deadline[1];
+
+    const grade = fullText.match(/\b(\d{1,3}%|[A-F][+-]?)\b/);
+    if (grade) e.grade = grade[1];
+
+    const prof = fullText.match(/\b(professor|prof\.?|dr\.?)\s+([A-Z][a-z]+)/i);
+    if (prof) e.professor = prof[0];
+
+    return e;
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 7: RESPONSE POOLS
+// ─────────────────────────────────────────────────────────────
+
+const RESPONSE_POOLS = {
+    coursework_stress: {
+        opener: [
+            e => `That feeling when everything is due at once and your brain just locks up is real. ${e.task ? `What's the ${e.task} situation specifically?` : "Which class has you the most worried right now?"}`,
+            e => `${e.subject ? `${e.subject} piling up on top of everything else` : "Having that much coursework stacked up"} is genuinely a lot. Walk me through what's actually due — even a rough list helps.`,
+            e => `Assignment overload feels bigger in your head than on paper, but it's still real. What's due absolutely first?`,
+        ],
+        explore: [
+            e => `Okay, so ${e.task ? `the ${e.task}` : "that assignment"} is the pressure point. What part is tripping you up — getting started, the middle, or just finding the time?`,
+            e => `When you picture sitting down to work on it, what happens in your head? Does it feel impossible to start, or do you start and then stall?`,
+            e => `Is the stress about the volume of work, or more about one specific thing that feels overwhelming?`,
+        ],
+        bridge: [
+            e => `You don't have to finish ${e.task ? `the ${e.task}` : "all of it"} today. You just have to make it smaller. What's the absolute tiniest version of starting?`,
+            e => `The brain can't handle "I need to do everything." It can only handle one sentence, one section, one function. What's the one small unit you could produce in the next 20 minutes?`,
+            e => `Most of the pain is coming from thinking about the work, not the work itself. What's one thing you could close a loop on today — even partially?`,
+        ],
+        action: [
+            e => `Set a 20-minute timer and open ${e.task ? `the ${e.task} document` : "just one assignment"}. You're not writing — you're just looking at it. That's the whole goal.`,
+            e => `Write three bullet points about what you already know about ${e.task ? `the ${e.task}` : "the assignment"}. Three bullets. Nothing more.`,
+            e => `Close every tab except the one assignment. Set a 15-minute sprint. After the timer, you're allowed to stop — but you have to start.`,
+        ],
+        closure: [
+            e => `You named the overwhelm instead of letting it sit. The next time the pile-up hits, start with that same move: list it, then shrink it.`,
+            e => `Overload doesn't mean failure. It means your plate got too full. Keep breaking things into 20-minute chunks and you'll be surprised what you can move through.`,
+        ],
+    },
+    burnout_doubt: {
+        opener: [
+            e => `Burnout is its own kind of heavy — not just tired, but that specific hollowness where nothing feels like it matters. How long have you been running on empty?`,
+            e => `Questioning your major when you're burned out is so common — but it's worth separating "I hate this subject" from "I need to rest." When did you last feel any spark for your studies?`,
+            e => `That exhausted, disconnected feeling where even small tasks feel massive. Is this something that crept up gradually or did something specific tip it?`,
+        ],
+        explore: [
+            e => `When you imagine a full day off with zero guilt — no studying — what comes up? Relief, or does the anxiety about falling behind follow you?`,
+            e => `There's a difference between burning out on the workload and burning out on the actual field. Which feels closer to true?`,
+            e => `What used to feel interesting about ${e.subject ? e.subject : "your major"}, even a little, before this kicked in?`,
+        ],
+        bridge: [
+            e => `Burnout distorts everything. It makes you think you hate things you actually just need a break from. Before drawing any conclusions, your brain needs a real reset.`,
+            e => `Right now your brain is running on fumes and making permanent-sounding decisions from a temporary state. You don't have to solve the major question today.`,
+            e => `The doubt is real, but it's speaking through exhaustion. You don't have to figure out your whole future — just the next few hours.`,
+        ],
+        action: [
+            e => `Can you give yourself two hours today that belong only to you, with zero school attached? No planning, no studying, no "productive" anything?`,
+            e => `Go outside for 15 minutes, no podcast or music. Just walk. Your brain needs decompression, not more input.`,
+            e => `Write one sentence about something outside of school that used to make you feel like yourself. Just one sentence. That's your anchor for today.`,
+        ],
+        closure: [
+            e => `Burnout is reversible. It doesn't mean you made the wrong choice — it means you've been pushing without recovering. Recovery is the work right now.`,
+            e => `The fact that you're questioning things shows you care. That fire isn't gone, it's just smothered. Give it air before making any big calls.`,
+        ],
+    },
+    harsh_grading: {
+        opener: [
+            e => `${e.grade ? `A ${e.grade}` : "A grade like that"} when you worked hard on it stings in a really specific way. What did the feedback actually say?`,
+            e => `Getting crushed on ${e.task ? `a ${e.task}` : "an assignment"} when you put effort in is such a deflating experience. What part hit hardest?`,
+            e => `That gut-drop feeling when you see the grade is rough. Was this ${e.task ? `the ${e.task}` : "something"} you felt good about going in, or were you already nervous?`,
+        ],
+        explore: [
+            e => `Let's separate how it was said from what it was pointing at. ${e.professor ? `What did ${e.professor} specifically flag as the issue?` : "What was the actual technical critique underneath?"}`,
+            e => `If you had to guess the one thing that cost the most points — even if you disagree — what would it be?`,
+            e => `Was this consistent with feedback you've gotten from this class before, or did something feel off?`,
+        ],
+        bridge: [
+            e => `One grade is data, not destiny. The useful question isn't "why did I fail" but "what's one concrete thing I'd do differently?" What's your honest answer?`,
+            e => `Bad grades are almost always recoverable — but only if you can find the one specific thing to fix. What's the clearest signal in the feedback?`,
+            e => `You're allowed to be frustrated. Then — when the dust settles — we can turn the feedback into a one-item checklist for the next assignment.`,
+        ],
+        action: [
+            e => `Tonight, close the grade notification. Tomorrow, read the rubric and circle only the area that lost the most points. Just read it.`,
+            e => `For your next ${e.task ? e.task : "assignment"}, add one quick checklist item based on what they flagged. One line. That's how you use this.`,
+            e => `If you feel strongly this was unfair, email ${e.professor ? e.professor : "the professor"} and ask to discuss the rubric. Most will talk through it.`,
+        ],
+        closure: [
+            e => `You showed up, you submitted, you faced the feedback. That's what students who grow do.`,
+            e => `One bad grade changes nothing about your overall trajectory if you use it as information. You've got this.`,
+        ],
+    },
+    confusing_material: {
+        opener: [
+            e => `There's a specific kind of panic when the material won't click and you can't even figure out what you don't understand. ${e.subject ? `What part of ${e.subject} has you stuck?` : "What are you looking at that makes no sense?"}`,
+            e => `Being lost on ${e.task ? `a ${e.task}` : "an assignment"} is frustrating, but it's almost never "I'm not smart enough" — it's usually one missing piece. Where exactly does your understanding break down?`,
+            e => `${e.subject ? e.subject : "Material like this"} can genuinely be hard to parse. Are you frozen at the start, or did you hit a wall somewhere in the middle?`,
+        ],
+        explore: [
+            e => `When you read the ${e.task ? e.task : "prompt or material"}, at what specific sentence or concept does your brain go "wait, what?"`,
+            e => `Is there anything in ${e.subject ? e.subject : "this topic"} that you do feel solid on, even a small piece? The path forward often starts from what you already know.`,
+            e => `Have you tried explaining what you think it's asking back to yourself out loud? Sometimes that alone reveals where the gap is.`,
+        ],
+        bridge: [
+            e => `Confusion almost always means one foundational piece is missing underneath. You're not lost — you're just missing the step before this step. What's the last concept you felt okay about?`,
+            e => `You don't need to understand all of ${e.subject ? e.subject : "it"} right now. You need the one piece that unlocks this problem. Let's find that piece.`,
+            e => `Forget the assignment for a second. Google just the one term you keep hitting and can't get past. Just one definition. That's often all it takes.`,
+        ],
+        action: [
+            e => `Pick the one concept in ${e.subject ? e.subject : "this material"} you feel least clear on. Search for it with "explained simply" after it. Read one explanation. Just one.`,
+            e => `Reread the ${e.task ? e.task : "assignment"} and underline every word you don't fully understand. That becomes your real list. Tackle it one item at a time.`,
+            e => `Try explaining to yourself — out loud — what you think the question is asking you to do. Even if you're wrong, it'll surface exactly where the gap is.`,
+        ],
+        closure: [
+            e => `Being confused doesn't mean you don't belong in this class. It means you're working at the edge of your current understanding — which is exactly where learning happens.`,
+            e => `You broke it down instead of staring at it frozen. That's the skill. Next time, go straight to "what's the one thing I don't understand" and start there.`,
+        ],
+    },
+    imposter_syndrome: {
+        opener: [
+            e => `That feeling — where everyone around you seems to have a map and you're wandering — is one of the most isolating things about being a student. What's making it feel especially sharp today?`,
+            e => `Imposter syndrome shows you everyone's highlight reel and compares it to your backstage. What specifically made you feel like you don't belong today?`,
+            e => `The "I'm the only one who doesn't get it" feeling is something so many students carry quietly. What triggered it for you right now?`,
+        ],
+        explore: [
+            e => `Is this tied to a specific person you're comparing yourself to, or is it more of a general fog of inadequacy?`,
+            e => `When you imagine what your classmates' internal experience is actually like — not what they perform — what do you think they're feeling?`,
+            e => `What's the evidence your brain is using to decide you don't belong here? Let's look at it directly.`,
+        ],
+        bridge: [
+            e => `Here's something real: people who feel most like frauds are usually the most conscientious ones. The people who genuinely don't belong rarely question whether they belong.`,
+            e => `Nobody got into ${e.subject ? e.subject : "this program"} by accident. The doubts are loud, but they're not facts. What's one thing you've actually done well recently?`,
+            e => `Comparison steals from yourself. The version of your classmate you're comparing to is a projection. What would it feel like to measure yourself against yesterday's you instead?`,
+        ],
+        action: [
+            e => `Write down two things you've figured out this semester — anything, even if they feel small. Read them back. That's your reality, not the comparison.`,
+            e => `Next time you're in class and feel lost, try saying "can you clarify that?" — you'll find half the room had the same question. Silence isn't comprehension.`,
+            e => `Write one sentence about something you genuinely understand in ${e.subject ? e.subject : "your field"} right now. Own it.`,
+        ],
+        closure: [
+            e => `The doubt doesn't mean you don't belong. It usually means you care deeply. You were accepted because someone looked at your ability and said yes.`,
+            e => `You're not behind. You're in the middle of learning. That's not the same thing.`,
+        ],
+    },
+    deadline_panic: {
+        opener: [
+            e => `Deadline-panic mode where everything feels due right now and your brain freezes is a real physiological response, not a character flaw. ${e.deadline ? `With something due ${e.deadline}` : "What's the most urgent deadline you're looking at?"} — what's on the list?`,
+            e => `Okay, let's stop the spiral. Panic is your brain trying to process everything at once, which it can't do. What's the single most urgent deadline?`,
+            e => `Multiple deadlines converging is genuinely stressful. What's due first? Not everything — just first.`,
+        ],
+        explore: [
+            e => `For the most urgent one: how much is actually done? Even partial progress counts.`,
+            e => `If you had to choose just one assignment to save your grade, which would it be?`,
+            e => `Is the panic about not having enough time, not knowing how to do the work, or both?`,
+        ],
+        bridge: [
+            e => `Here's the only thing that matters right now: ${e.task ? `the ${e.task}` : "the first one"}. Everything else goes in a mental drawer. You cannot think about the other stuff yet.`,
+            e => `Panic makes you feel like you need to do everything at once. You don't. You need to do one thing next. What's the literal first sentence or step you could produce?`,
+            e => `The work doesn't get done in your head — it gets done in the document. The gap between "nothing" and "something on the page" is the hardest part.`,
+        ],
+        action: [
+            e => `Open ${e.task ? `the ${e.task}` : "the most urgent assignment"} right now. Set a 20-minute timer. Your only job is to produce something — anything. Not good, just something.`,
+            e => `If you can't decide where to start, just type your name and the title. The document is open. You've begun.`,
+            e => `Three 25-minute work sprints with 5-minute breaks each. That's the whole plan for the next two hours.`,
+        ],
+        closure: [
+            e => `You broke through the freeze — that's the hardest part. Keep breaking it into time blocks and you'll be surprised how much you can move.`,
+            e => `You handled this by getting specific instead of spiraling. That's the skill to bring to every crunch.`,
+        ],
+    },
+    exam_anxiety: {
+        opener: [
+            e => `Pre-exam anxiety is your brain running worst-case scenarios on repeat. ${e.task ? `When is the ${e.task}?` : "When's the exam, and what's making it feel especially heavy?"}`,
+            e => `That specific dread before an exam doesn't mean you're going to fail — it means you care. What part has you most worried?`,
+            e => `Exam anxiety is physical — your body is in mild threat mode. What does it feel like for you right now?`,
+        ],
+        explore: [
+            e => `Is the anxiety more about the content itself, or more about the pressure and what's at stake?`,
+            e => `When you picture sitting down to take it, what's the specific fear — blanking out, not finishing in time, a particular topic?`,
+            e => `How prepared do you actually feel, not how anxious? Those two things can be very different.`,
+        ],
+        bridge: [
+            e => `Anxiety about an exam and readiness for an exam are completely separate things. You can be very prepared and very anxious. What you know doesn't disappear because you're nervous.`,
+            e => `Your brain has stored more than it feels like right now. Anxiety narrows your access to it — which is why practice problems open that access back up.`,
+            e => `You have gotten through every hard thing you've faced so far. This is one more.`,
+        ],
+        action: [
+            e => `Do one practice problem on the concept you feel least solid on. Just one. It signals to your brain "I'm prepared" and takes the edge off.`,
+            e => `Tonight: put the notes down two hours before sleep. Your brain consolidates better with rest than with last-minute cramming. Trust what's already in there.`,
+            e => `The morning of: eat something, drink water, arrive early. Physical readiness is real exam prep.`,
+        ],
+        closure: [
+            e => `Whatever happens on this exam, it is one data point in a long story. You are more than any single grade.`,
+            e => `You prepared, you showed up, you faced it. That's all you can control — and that's exactly what you did.`,
+        ],
+    },
+    procrastination: {
+        opener: [
+            e => `That stuck feeling — where you know you need to start but your whole system resists — is usually not laziness. It's avoidance, and avoidance has a reason underneath it. What does the thought of starting ${e.task ? `the ${e.task}` : "the work"} actually feel like?`,
+            e => `Procrastination is almost never about not wanting to work — it's usually about something the work is connected to. Fear of it being bad, fear of trying and still failing. Does any of that sound familiar?`,
+            e => `The can't-start loop is one of the most frustrating places to be. What have you been doing instead of starting?`,
+        ],
+        explore: [
+            e => `When you think about opening ${e.task ? `the ${e.task}` : "it"} right now, what feeling actually comes up? Boredom, dread, overwhelm, something else?`,
+            e => `Is this specific to ${e.subject ? e.subject : "this class"} or is it happening across everything right now?`,
+            e => `What would have to be true for you to feel okay about starting? What condition are you waiting for?`,
+        ],
+        bridge: [
+            e => `The task never gets smaller while you wait, but the dread does get bigger. The only way out is the tiniest possible start — something so small it can't be resisted.`,
+            e => `You don't need to be ready. You don't need to feel like doing it. You just need to do one thing so small it barely counts. Then inertia takes over.`,
+            e => `The goal right now is not to finish. Not even to do it well. The goal is just to break the seal.`,
+        ],
+        action: [
+            e => `Your only task: open the document. That's it. Open it and stare at it for 60 seconds. You don't have to type anything.`,
+            e => `Set a 5-minute timer and write anything — even "I don't know how to start this" — in the document. Five minutes. Then you're allowed to stop.`,
+            e => `Tell yourself: "I'm starting ${e.task ? `the ${e.task}` : "my work"} for exactly 10 minutes. Then I can stop." The commitment to a short time reduces avoidance significantly.`,
+        ],
+        closure: [
+            e => `You identified what was really going on instead of just calling yourself lazy. That's the work. Next time, name the resistance first — then negotiate with it.`,
+            e => `The starting is always the hardest part. You broke through it. That matters.`,
+        ],
+    },
+    focus_struggles: {
+        opener: [
+            e => `The inability to concentrate even when you're trying is maddening. Is this a today problem, or has focus been hard for a while?`,
+            e => `Sitting at your desk while your brain refuses to cooperate is exhausting. What does the distraction look like — phone, thoughts, something else?`,
+            e => `Focus struggles can come from a dozen places. Are you physically tired, emotionally drained, or is it more like restless mental energy that won't settle?`,
+        ],
+        explore: [
+            e => `When you try to study ${e.subject ? e.subject : ""}, how long are you able to focus before it breaks — 30 seconds, 5 minutes?`,
+            e => `What's your setup right now — where are you, what's around you, what's on your screen?`,
+            e => `Is something specific running in the background of your mind pulling your attention, or is it more diffuse than that?`,
+        ],
+        bridge: [
+            e => `Focus isn't a willpower game — it's an environment game. The brain defaults to distraction unless the environment makes focus the path of least resistance.`,
+            e => `Forcing concentration when your nervous system is dysregulated is like sprinting while exhausted. Sometimes the move is a 10-minute reset before you try again.`,
+            e => `Two-minute rule: write down everything on your mind before you start. Externalizing it frees up the mental RAM that was holding it.`,
+        ],
+        action: [
+            e => `Phone in another room — not face-down, in another room. Set a 25-minute timer. You can check it after. That physical barrier reduces checking more than you'd expect.`,
+            e => `Try the 2-minute brain dump: before studying, write everything on your mind for 2 minutes straight. Then close that notebook and open the work.`,
+            e => `Change one thing about your physical space right now — different chair, different room, facing a different direction. Novel environment resets attention slightly.`,
+        ],
+        closure: [
+            e => `Focus is a skill and a resource, not a fixed trait. The days it's hard say nothing about your ability.`,
+        ],
+    },
+    peer_comparison: {
+        opener: [
+            e => `Comparing yourself to classmates is one of the quickest paths to feeling terrible — and social media makes it ten times worse. What set this off today?`,
+            e => `That "everyone has it together except me" feeling is so pervasive in academic environments. What are you comparing specifically?`,
+            e => `Seeing peers succeed can trigger something really painful when you're struggling. What does the comparison look like for you right now?`,
+        ],
+        explore: [
+            e => `Is this about academic performance, or is it more social — feeling less connected, confident, or put-together than your peers?`,
+            e => `What would it mean to you if it turned out your peers were struggling just as much but not showing it?`,
+            e => `Do you know for a fact how those people are doing, or are you inferring it from what they project?`,
+        ],
+        bridge: [
+            e => `Students consistently overestimate how well their peers are doing. Everyone is performing some version of "fine." The behind-the-scenes is almost always messier than it looks.`,
+            e => `You're measuring your insides against their outsides. That comparison is structurally rigged — you'll lose every time. The only fair comparison is you yesterday vs. you today.`,
+        ],
+        action: [
+            e => `Mute or unfollow one account that consistently makes you feel worse about yourself. It's not dramatic — it's just good environment design.`,
+            e => `Write one thing you've handled or figured out this week that was hard. Doesn't have to be impressive. Just true.`,
+        ],
+        closure: [
+            e => `Your path and theirs are not the same path. There's no single finish line everyone's racing toward. You're building something that's yours.`,
+        ],
+    },
+    frustration: {
+        opener: [
+            e => `Frustration like that usually means something you care about isn't working the way it should. Is this pointed at something specific, or is it more like everything at once?`,
+            e => `That building irritation where nothing is catastrophic but everything is grinding — exhausting in its own right. What pushed you over the edge today?`,
+            e => `Sometimes frustration is just the surface feeling for something harder underneath. What's actually going on?`,
+        ],
+        explore: [
+            e => `If you had to name the one thing most responsible for how you're feeling, what would it be?`,
+            e => `Is this frustration something you feel like you can do anything about, or does it feel out of your control?`,
+        ],
+        bridge: [
+            e => `Frustration is energy. It's uncomfortable, but it's not passive — there's something in it that wants to change something. What would "better" look like from here?`,
+            e => `There's usually one small thing within arm's reach even when everything feels out of control. What's one thing you actually have control over right now?`,
+        ],
+        action: [
+            e => `Step away from whatever is in front of you for 10 minutes. Not to fix it — just to let your cortisol drop. Frustration decisions are usually worse than post-break decisions.`,
+            e => `Write it down: what happened, what you wanted to happen, and what you're actually going to do. Externalizing it makes it smaller.`,
+        ],
+        closure: [
+            e => `You named it and worked through it instead of letting it fester. Frustration is going to show up again — now you've practiced the move.`,
+        ],
+    },
+    sadness: {
+        opener: [
+            e => `I'm really glad you reached out. Sadness without a clear reason is its own kind of heavy. Is there anything contributing to how you're feeling, or is it more like a general weight?`,
+            e => `It takes something to admit you're feeling sad — a lot of people just push through it. I want to make space for that. What's it like for you today?`,
+            e => `Some days just feel gray, and that's okay. What do you need most right now — to vent, to problem-solve, or just to be heard?`,
+        ],
+        explore: [
+            e => `Have you been carrying this for a while, or did something shift recently?`,
+            e => `Is there anything you've been avoiding or not letting yourself feel that might be feeding into this?`,
+            e => `When you're sad like this, what usually helps even a little — movement, connection, distraction, rest?`,
+        ],
+        bridge: [
+            e => `Being gentle with yourself right now is the right call. This isn't a problem to solve — it's a state to move through. The only goal today is taking care of yourself.`,
+            e => `Sadness often signals something that matters to you isn't being honored. Your feelings are pointing at something real, even if you can't name it yet.`,
+        ],
+        action: [
+            e => `One small act of care: drink some water, put on something comfortable, and give yourself permission to not be productive today.`,
+            e => `Is there one person you could reach out to today — not to talk about this necessarily, just to feel connected? Sometimes proximity to someone kind helps.`,
+        ],
+        closure: [
+            e => `You showed up for yourself today. That counts for a lot, especially on the hard days.`,
+            e => `Sadness moves through. You don't have to fight it — just let yourself feel it without judgment.`,
+        ],
+    },
+    anxiety: {
+        opener: [
+            e => `Anxiety makes everything feel urgent and threatening even when it isn't — your body is in overdrive. Is this tied to something specific, or is it more of a general overwhelm?`,
+            e => `That anxious, can't-settle feeling is physically real. When did it start feeling this way today?`,
+            e => `Anxiety this strong is hard to think through from inside it. Before we talk about causes — are you somewhere safe and comfortable right now?`,
+        ],
+        explore: [
+            e => `What's your body doing right now — heart racing, chest tight, mind spinning?`,
+            e => `Is there one specific thing your brain keeps returning to, or is it more like a dozen things at once?`,
+        ],
+        bridge: [
+            e => `Your nervous system needs a physical signal that you're safe before your brain can think clearly. The logic part is less accessible when you're in this state.`,
+            e => `Anxiety tells you that thinking harder or worrying more will help. It won't. The reset has to come through your body, not your thoughts.`,
+        ],
+        action: [
+            e => `Breathe in for 4 counts, hold for 4, out for 6. Do it three times. That extended exhale activates the parasympathetic system — it's physiological, not just a saying.`,
+            e => `Get a glass of cold water and drink it slowly. The physical act of swallowing and the temperature change genuinely help regulate the nervous system.`,
+            e => `Step outside for 5 minutes if you can. Brief contact with fresh air and a change of environment interrupts the anxiety cycle.`,
+        ],
+        closure: [
+            e => `You're safe. The anxiety is uncomfortable, but it passes. You've made it through every anxious moment so far, and you'll make it through this one.`,
+            e => `You reached out instead of sitting with it alone. You don't have to carry this by yourself.`,
+        ],
+    },
+    missed_deadline: {
+        opener: [
+            e => `Okay, that sinking feeling is real — but let's not spiral. The most important thing is damage control, not self-punishment. Have you contacted ${e.professor ? e.professor : "the professor"} yet?`,
+            e => `Missing a deadline is recoverable in most cases, but speed matters. The sooner you act, the more options you have. What exactly was missed?`,
+            e => `This happened. We can't undo it, but we can control what happens next. Check the syllabus right now for the late work policy — what does it say?`,
+        ],
+        explore: [
+            e => `Was there a reason it was missed — an emergency, an oversight — or did it just slip through?`,
+            e => `Have you looked at the late policy? Some professors accept late work for partial credit even when it's not formally stated.`,
+        ],
+        bridge: [
+            e => `The worst thing you can do is say nothing and hope it disappears. Professors almost always respond better to a student who communicates than one who ghosts.`,
+            e => `A polite, honest email can save your grade in situations like this. Most instructors are human beings who've had bad weeks too.`,
+        ],
+        action: [
+            e => `Right now: send a short, direct email to ${e.professor ? e.professor : "the professor"}. Acknowledge you missed it, explain briefly if there's a real reason, and ask if there are any options. Three to four sentences.`,
+            e => `Check your LMS — sometimes late submission portals stay open even after the deadline. Worth checking before you email.`,
+        ],
+        closure: [
+            e => `You handled it. You took action instead of avoiding. Whatever comes next, you gave yourself the best possible shot.`,
+        ],
+    },
+    general_venting: {
+        opener: [
+            e => `I'm here. You don't have to have it figured out or have the right words — just tell me what's going on.`,
+            e => `Sometimes it's not one thing, it's just everything pressing in at once. What's at the front of your mind right now?`,
+            e => `Take your time. What's making today feel hard?`,
+        ],
+        explore: [
+            e => `What would help most right now — talking it through, problem-solving, or just being heard?`,
+            e => `Is there a part of this that feels more in your control than the rest?`,
+            e => `When did things start feeling this way — was there a moment, or has it been building?`,
+        ],
+        bridge: [
+            e => `It makes sense that you're feeling this way. A lot is clearly going on. You don't have to fix everything right now.`,
+            e => `You can't do everything at once. But you can do one thing. What would make you feel even 5% better in the next hour?`,
+        ],
+        action: [
+            e => `What's one thing — even tiny — you can do in the next 20 minutes to take a little weight off?`,
+            e => `Sometimes the most helpful thing is just writing it down. What are the three biggest things taking up space in your head right now?`,
+        ],
+        closure: [
+            e => `You took time to check in with yourself today. That's not small. Take it one step at a time.`,
+            e => `You've got this. And I'm here when you need to process more.`,
+        ],
+    },
+};
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 8: RESPONSE SELECTOR
+// ─────────────────────────────────────────────────────────────
+
+function _getStage(turn) {
+    if (turn === 0) return "opener";
+    if (turn <= 2)  return "explore";
+    if (turn === 3) return "bridge";
+    if (turn <= 5)  return "action";
+    return "closure";
+}
+
+function _isResistance(text) {
+    const t = text.toLowerCase().trim();
+    if (["yes","yeah","yep","sure","ok","okay","yup","hmm","alright"].includes(t)) return false;
+    return t.length <= 5 || /^(idk|idc|not sure|nothing|maybe|fine|whatever|i guess|dunno|idk lol)$/i.test(t);
+}
+
+function selectResponse(intent, turn, entities, usedIds) {
+    const pool = RESPONSE_POOLS[intent] || RESPONSE_POOLS.general_venting;
+    const stage = _getStage(turn);
+    const candidates = pool[stage] || pool.explore || pool.opener;
+
+    const fresh = candidates.filter((_, i) => !usedIds.has(`${intent}:${stage}:${i}`));
+    const source = fresh.length > 0 ? fresh : candidates;
+
+    const chosen   = source[Math.floor(Math.random() * source.length)];
+    const realIdx  = candidates.indexOf(chosen);
+    const id       = `${intent}:${stage}:${realIdx}`;
+    const text     = typeof chosen === "function" ? chosen(entities) : chosen;
+
+    return { text, id };
+}
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 9: USER MEMORY ENGINE
+// ─────────────────────────────────────────────────────────────
+
+const UserMemory = {
+    getProfile() {
+        return JSON.parse(localStorage.getItem("rc_userProfile")) || {
+            totalSessions: 0, streakCount: 0, lastVisitDate: null, moodLog: [], frictionMap: {},
+        };
+    },
+    saveProfile(p) { localStorage.setItem("rc_userProfile", JSON.stringify(p)); },
+    logSession(emotion, intent) {
+        const p = this.getProfile();
+        const today = new Date().toLocaleDateString();
+        if (p.lastVisitDate !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            p.streakCount = p.lastVisitDate === yesterday.toLocaleDateString() ? p.streakCount + 1 : 1;
+            p.totalSessions++;
+            p.lastVisitDate = today;
+        }
+        if (intent) p.frictionMap[intent] = (p.frictionMap[intent] || 0) + 1;
+        p.moodLog.push({ date: today, emotion, intent });
+        if (p.moodLog.length > 30) p.moodLog.shift();
+        this.saveProfile(p);
+        return p;
+    },
+    getNudge() {
+        const p = this.getProfile();
+        if (p.moodLog.length < 3) return null;
+        const recent = p.moodLog.slice(-3);
+        if (recent.every(l => l.emotion === "distressed" || l.emotion === "anxious")) {
+            return "Before we dive in — I've noticed you've been carrying a lot across our last few sessions. That takes real strength to keep showing up. What's on your mind today?";
+        }
+        if (p.totalSessions === 5)  return "This is your 5th session. You've been consistently showing up for yourself — that's worth acknowledging. What are we working through?";
+        if (p.totalSessions === 10) return "Ten sessions in. Every time you open this instead of letting things spiral, you're building a real skill. What's going on?";
+        return null;
+    },
+};
+
+// ─────────────────────────────────────────────────────────────
+// SECTION 10: CONVERSATION ENGINE
+// ─────────────────────────────────────────────────────────────
 
 class ResilientCareEngine {
     constructor() {
-        this.memory = [];
-        this.maxMemory = 12;
-
+        this.history = [];
         this.state = {
             currentIntent: null,
-            step: 0,
-            lastEmotion: "neutral"
+            turn: 0,
+            sessionStarted: false,
+            usedResponseIds: new Set(),
+            entities: {},
         };
-
-        this.intentDatabase = {
-            "coursework stress": {
-                autoMode: "Direct",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    
-                    // SMART EXTRACTION: Find out what kind of work and how much
-                    let taskType = "work";
-                    let taskCount = "a mountain of";
-                    if (inputLower.includes("essay") || inputLower.includes("paper")) taskType = "writing";
-                    if (inputLower.includes("code") || inputLower.includes("project")) taskType = "projects";
-                    if (inputLower.includes("exam") || inputLower.includes("midterm")) taskType = "studying";
-                    
-                    const numMatch = inputLower.match(/\b(\d+|two|three|four|five)\b/);
-                    if (numMatch) taskCount = numMatch[0];
-                    
-                    if (step === 0) {
-                        return `It sounds like you have ${taskCount} ${taskType} on your plate right now. To stop the spiral, let's get it out of your head. Type out a quick list of exactly what is due.`;
-                    }
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It's totally okay if your brain is blanking. Let's just pick one tiny thing—what is one class you know you have work for?";
-                        // DYNAMIC BRANCHING: Acknowledge their list
-                        if (inputLower.length > 20) return "Okay, seeing it written out helps. Put the rest of that list in a mental drawer for now. For the very first item, what is the absolute smallest step you can take?";
-                        return "Good. Now, put the rest of the list in a mental drawer. For the most urgent item, what is the absolute smallest step you can take to get started?";
-                    }
-                    if (isResistance(inputLower)) return "If you can't think of a first step right now, just start by opening the document or reading the prompt. Set a 5-minute timer and just look at it. You can do this.";
-                    return "Awesome. Close your other tabs, set a short timer, and focus just on that piece. Take a break right after.";
-                }
-            },
-            "burnout and doubt": {
-                autoMode: "Empathetic",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "That sounds exhausting. Burnout is a heavy weight to carry. How long have you been feeling like this?";
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It's okay if you're not sure. When everything blurs together, it's hard to track time. When was the last time you actually rested without feeling guilty?";
-                        return "That’s a long time to carry that weight. Be honest—when was the last time you actually rested without looking at a screen or thinking about your major?";
-                    }
-                    if (isResistance(inputLower)) {
-                        return "It's okay if you have no energy left to even figure it out. Please just close your laptop and let yourself exist for a bit. The work will survive without you for an hour.";
-                    }
-                    return "Right now, productivity isn’t the goal. Recovery is. Please step away from the screen for 20 minutes to reset. Your brain needs a hard reset.";
-                }
-            },
-            "harsh grading": {
-                autoMode: "Direct",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    
-                    // SMART EXTRACTION: What kind of assignment?
-                    let task = "assignment";
-                    const taskMatch = inputLower.match(/(exam|project|paper|essay|midterm|quiz|code)/i);
-                    if (taskMatch) task = taskMatch[0];
-
-                    if (step === 0) return `That feedback probably felt incredibly personal. Getting a bad grade on a ${task} is always a punch to the gut. What part of the feedback stung the most?`;
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It's okay if it all just hurts to look at right now. Try to take a breath and just look at the rubric. What specific area lost the most points?";
-                        return "Okay, let’s try to separate the emotion from the critique. If we look past how they said it, what’s the actual technical issue they pointed out?";
-                    }
-                    if (isResistance(inputLower)) return "Don't force yourself to look at it right now if it's too much. Close the tab, give yourself tonight to be mad about it, and look at it again tomorrow with fresh eyes.";
-                    return "Focus only on fixing that one specific issue for your next assignment. Ignore everything else for now. One step at a time.";
-                }
-            },
-            "confusing material": {
-                autoMode: "Balanced",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    const allText = (ctx + " " + inputLower).toLowerCase();
-                    
-                    // SMART EXTRACTION: Look for specific course codes (e.g., CSIT 313) or subjects (e.g., Biology)
-                    let specificSubject = "This material";
-                    const courseMatch = allText.match(/([a-z]+\s?\d{3}|biology|math|csit|chemistry|human-computer interaction|programming|science)/i);
-                    if (courseMatch) {
-                        specificSubject = courseMatch[0];
-                    }
-
-                    if (step === 0) return `I completely understand. ${specificSubject} can feel like a foreign language sometimes. Where exactly are you stuck?`;
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return `When nothing makes sense, it's easy to completely freeze up. Ignore the big picture for a second. What is one term in ${specificSubject} that you *do* recognize?`;
-                        return "Let’s shrink it down. Don't try to solve the whole problem. Just pick out one small piece that you do understand or recognize.";
-                    }
-                    if (isResistance(inputLower)) return "If it's truly all gibberish right now, your brain might be too tired to process it. Put it away for 30 minutes and come back to it. You aren't failing, you're just fatigued.";
-                    return "Good. Start exactly there. Don’t try to solve it fully yet, just define that one small piece. You are building momentum.";
-                }
-            },
-            "imposter syndrome": {
-                autoMode: "Grounded",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "It feels like everyone else gets it except you, right? Imposter syndrome is so incredibly common, especially when tackling difficult degrees.";
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It can feel like a general cloud of inadequacy. Let's ground it in reality: what is one specific concept or project you feel behind on today?";
-                        return "Remember, people only show their successes; they hide their struggles. What specific concept is making you feel behind today?";
-                    }
-                    if (isResistance(inputLower)) return "You don't have to prove anything to me or anyone else today. Just remember that you were accepted into this program for a reason. You belong here.";
-                    return "Let’s isolate that one concept and break it down. You aren't behind, you are just in the middle of learning it.";
-                }
-            },
-            "deadline overload": {
-                autoMode: "Direct",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    
-                    // SMART EXTRACTION
-                    let timeFrame = "soon";
-                    const timeMatch = inputLower.match(/(tomorrow|tonight|midnight|this week|in \d+ hours)/i);
-                    if (timeMatch) timeFrame = timeMatch[0];
-
-                    if (step === 0) return `The panic of deadlines creeping up ${timeFrame} can completely freeze your brain. Let's stop the spiral. What is due absolutely first?`;
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "I know it feels like it's all due at once. If you had to pick just one assignment to save your grade, which one is it?";
-                        return "Perfect. Mentally put the other assignments in a drawer. You are only allowed to look at this one. What is the literal first action you need to take for it?";
-                    }
-                    if (isResistance(inputLower)) return "If picking a step is too hard, just open the blank document and type your name. That is a victory right now.";
-                    return "Focus only on that step. Set a 15-minute timer and just start that first action. Do not think beyond it yet.";
-                }
-            },
-            "frustration": {
-                autoMode: "Empathetic",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "Frustration is such a heavy, uncomfortable feeling. Is there a specific class or situation triggering this, or is it everything at once?";
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It's completely fine if everything just feels generally annoying right now. You don't have to force a reason. Can you do one tiny thing right now to make your space more comfortable?";
-                        return "That sounds incredibly annoying to deal with. When things get this frustrating, it helps to shrink the focus. What is one tiny thing you actually have control over right now?";
-                    }
-                    if (isResistance(inputLower)) {
-                        return "That is completely okay. You don't have to fix anything or do anything right now. Sometimes the best way to deal with frustration is to just step away, let yourself be annoyed for a bit, and let the wave pass. I'm here when you're ready.";
-                    }
-                    return "OK. Focus just on that piece you can control. Sometimes the best way to deal with frustration is to completely step away for 10 minutes, grab some water, and reset.";
-                }
-            },
-            "sadness": {
-                autoMode: "Empathetic",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "I'm really sorry you're feeling sad. It's completely okay to have days like this. Do you know what's making you feel down, or is it just a general heaviness?";
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "That makes sense. Sometimes it just sits there without a clear reason. Have you done anything kind for yourself today, even something tiny like getting a snack?";
-                        return "Thank you for sharing that with me. When you're feeling sad, it's important to be gentle with yourself. Have you done anything kind for yourself today?";
-                    }
-                    if (isResistance(inputLower)) {
-                        return "That is totally fine. You don't have to do anything right now. Just existing and getting through the day is enough. I'm here for you.";
-                    }
-                    return "Let's make that the only goal right now. Grab some water, listen to a comfort song, or just rest. Take care of yourself first today.";
-                }
-            },
-            "anxiety": {
-                autoMode: "Empathetic",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "I'm really sorry you're feeling anxious. Your body is probably in overdrive right now. Do you know what specifically is making you feel this way?";
-                    
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "That makes perfect sense. Anxiety rarely needs a logical reason to show up. Right now, let's just focus on taking a few deep breaths. Can you go grab a glass of cold water?";
-                        return "Thank you for sharing that. When you're dealing with anxiety, it's important to let your nervous system reset. Can you go grab some cold water or listen to a comfort song for a few minutes?";
-                    }
-                    if (isResistance(inputLower)) {
-                        return "You don't have to do anything right now. You are safe. Just take a deep breath. I'm right here with you until it passes.";
-                    }
-                    return "Take it one small step at a time. Be gentle with yourself today. I'm always here if you need to keep venting.";
-                }
-            },
-            "missed exam": {
-                autoMode: "Direct",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "That stomach-drop feeling is awful, but panicking won't fix it. Have you emailed your professor yet to explain what happened?";
-                    
-                    if (step === 1) {
-                        if (inputLower.includes("no") || inputLower.includes("not yet") || isResistance(inputLower)) return "Okay, review the syllabus first to see if there is a makeup policy. If not, email the professor immediately to politely explain the situation and ask if there are options.";
-                        if (inputLower.includes("yes") || inputLower.includes("already")) return "Good. You took the hardest step. Now we just have to wait for their reply. You did what you could.";
-                        return "Either way, the best move is to check the syllabus for the makeup policy and email the professor as soon as possible.";
-                    }
-                    return "Right now, to reduce stress, close your laptop, step away from the screen for 20 minutes, and let your adrenaline come down. You will survive this.";
-                }
-            },
-            "general venting": {
-                autoMode: "Balanced",
-                handler: (ctx, step, lastInput) => {
-                    const inputLower = (lastInput || "").toLowerCase();
-                    if (step === 0) return "I hear you. Tell me a bit more about what's going on.";
-                    if (step === 1) {
-                        if (isResistance(inputLower)) return "It's okay if you don't have the words right now. Sometimes just being here is enough. I'm listening.";
-                        return "That makes a lot of sense. What is one small thing you can do right now to make yourself feel just 10% better?";
-                    }
-                    if (isResistance(inputLower)) return "There is absolutely no pressure. Just take it one step at a time today.";
-                    return "Take it one step at a time. You've got this, and I'm here if you need to keep talking.";
-                }
-            }
-        };
-
-        this.categories = Object.keys(this.intentDatabase);
     }
 
-    remember(role, text) {
-        this.memory.push({ role, text });
-        if (this.memory.length > this.maxMemory) this.memory.shift();
-    }
-
-    getContext() {
-        return this.memory.map(m => `${m.role}: ${m.text}`).join("\n");
-    }
-
-    applyEmotionLayer(baseText, emotion) {
-        if (emotion === "distressed") {
-            const intros = [
-                "I can tell this is really weighing on you. ",
-                "This sounds incredibly stressful. ",
-                "I hear how much this is affecting you. "
-            ];
-            return intros[Math.floor(Math.random() * intros.length)] + baseText;
-        }
-        return baseText;
+    reset() {
+        this.history = [];
+        this.state = { currentIntent: null, turn: 0, sessionStarted: false, usedResponseIds: new Set(), entities: {} };
     }
 
     async generateResponse(userInput) {
-        this.remember("user", userInput);
+        if (isCrisis(userInput)) return CRISIS_RESPONSE;
 
-        const emotion = await detectEmotion(userInput);
-        
-        const exactMatches = {
-            "I feel frustrated. How can I deal with this frustration?": "frustration", 
-            "I feel sad. What are some steps to cope?": "sadness",
-            "I missed an exam": "missed exam",
-            "i missed an exam": "missed exam",
-            "I feel stressed so much coursework has to get done. How can I manage this stress?": "coursework stress",
-            "I feel stressed so much coursework has to get done.": "coursework stress",
-            "I feel anxious. How can I manage this anxiety?": "anxiety",
-            "I got harsh feedback on my assignment and I feel crushed.": "harsh grading",
-            "I'm so confused by this assignment. I don't even know where to start.": "confusing material",
-            "I'm completely burned out. I don't know why I'm even in this major.": "burnout and doubt",
-            "I feel like everyone else gets it and I'm the only one lost.": "imposter syndrome",
-            "Everyone else gets it but me.": "imposter syndrome",
-            "I have three deadlines this week and I'm completely overwhelmed.": "deadline overload",
-            "Coursework is piling up and I'm stressed.": "coursework stress",
-            "I got a bad grade and I feel crushed.": "harsh grading",
-            "I'm so lost on this assignment.": "confusing material",
-            "I'm totally burned out.": "burnout and doubt",
-            "Too many deadlines at once.": "deadline overload",
-            "coursework is piling up and I'm stressed.": "coursework stress",
-            "i got a bad grade and I feel crushed.": "harsh grading",
-            "i'm so lost on this assignment.": "confusing material",
-            "i'm totally burned out.": "burnout and doubt",
-            "everyone else gets it but me.": "imposter syndrome",
-            "too many deadlines at once.": "deadline overload"
+        this.history.push({ role: "user", text: userInput });
+
+        if (!this.state.sessionStarted) {
+            this.state.sessionStarted = true;
+            const nudge = UserMemory.getNudge();
+            if (nudge) {
+                this.history.push({ role: "assistant", text: nudge });
+                if (typeof autoSaveSession === "function") autoSaveSession("ResilientCare AI", nudge);
+                return { text: nudge, detectedMode: "Empathetic", detectedIntent: null, emotionalTone: "neutral", isComplete: false, suggestedChips: [] };
+            }
+        }
+
+        const [intentResult, emotion] = await Promise.all([
+            _modelsReady ? detectIntent(userInput) : Promise.resolve({ intent: "general_venting", confidence: 0.5 }),
+            _modelsReady ? detectEmotion(userInput) : Promise.resolve("neutral"),
+        ]);
+
+        const shouldSwitch = !this.state.currentIntent ||
+            (intentResult.confidence > 0.75 && intentResult.intent !== this.state.currentIntent);
+
+        if (shouldSwitch) {
+            this.state.currentIntent = intentResult.intent;
+            this.state.turn = 0;
+            this.state.usedResponseIds = new Set;
+            UserMemory.logSession(emotion, intentResult.intent);
+        }
+
+        if (_isResistance(userInput) && this.state.turn > 0) {
+            this.state.turn = Math.max(1, this.state.turn - 1);
+        }
+
+        this.state.entities = extractEntities(this.history);
+
+        const { text: rawText, id } = selectResponse(
+            this.state.currentIntent,
+            this.state.turn,
+            this.state.entities,
+            this.state.usedResponseIds,
+        );
+
+        this.state.usedResponseIds.add(id);
+        const finalText = applyEmotionLayer(rawText, emotion, this.state.turn);
+        this.state.turn++;
+
+        const isComplete = this.state.turn >= 7;
+        if (isComplete) { this.state.currentIntent = null; this.state.turn = 0; }
+
+        this.history.push({ role: "assistant", text: finalText });
+
+        const modeMap = {
+            coursework_stress:"Direct", deadline_panic:"Direct", missed_deadline:"Direct",
+            procrastination:"Direct", focus_struggles:"Direct",
+            burnout_doubt:"Empathetic", sadness:"Empathetic", anxiety:"Empathetic", frustration:"Empathetic",
+            imposter_syndrome:"Grounded", peer_comparison:"Grounded",
+            confusing_material:"Balanced", harsh_grading:"Balanced", exam_anxiety:"Balanced", general_venting:"Balanced",
         };
 
-        let topMLIntent = null;
-        let mlConfidence = 0;
-
-        if (typeof intentClassifier !== 'undefined' && intentClassifier && !exactMatches[userInput]) {
-            const result = await intentClassifier(userInput, this.categories);
-            topMLIntent = result.labels[0];
-            mlConfidence = result.scores[0];
-        }
-
-        let isNewIntent = false;
-
-        if (exactMatches[userInput]) {
-            this.state.currentIntent = exactMatches[userInput];
-            this.state.step = 0;
-            isNewIntent = true;
-        } else if (this.state.currentIntent === null) {
-            this.state.currentIntent = (mlConfidence > 0.40) ? topMLIntent : "general venting";
-            this.state.step = 0;
-            isNewIntent = true;
-        } else if (mlConfidence > 0.85 && topMLIntent !== this.state.currentIntent) {
-            this.state.currentIntent = topMLIntent;
-            this.state.step = 0;
-            isNewIntent = true;
-        }
-
-        if (isNewIntent && this.state.step === 0) {
-            if (typeof UserMemory !== 'undefined') UserMemory.logSession(emotion, this.state.currentIntent);
-
-            if (typeof UserMemory !== 'undefined') {
-                const nudge = UserMemory.getNudge();
-                if (nudge) {
-                    this.state.step = 1; 
-                    this.remember("assistant", nudge);
-                    return { text: nudge, detectedMode: "Empathetic", isComplete: false };
-                }
-            }
-        }
-
-        let responseText;
-        let finalMode = "Balanced";
-        let isComplete = false; 
-
-        if (this.state.currentIntent && this.intentDatabase[this.state.currentIntent]) {
-            const handler = this.intentDatabase[this.state.currentIntent].handler;
-            
-            responseText = handler(this.getContext(), this.state.step, userInput); 
-            finalMode = this.intentDatabase[this.state.currentIntent].autoMode;
-
-            if (this.state.step === 0) {
-                responseText = this.applyEmotionLayer(responseText, emotion);
-            }
-
-            this.state.step++;
-
-            if (this.state.step > 2) {
-                this.state.currentIntent = null;
-                this.state.step = 0;
-                isComplete = true; 
-            }
-        } else {
-            responseText = "I'm here for you. Tell me a bit more about what's going on.";
-            isComplete = true;
-        }
-
-        this.remember("assistant", responseText);
-
         return {
-            text: responseText,
-            detectedMode: finalMode,
-            isComplete: isComplete
+            text: finalText,
+            detectedMode:   modeMap[this.state.currentIntent] || "Balanced",
+            detectedIntent: this.state.currentIntent,
+            emotionalTone:  emotion,
+            isComplete,
+            suggestedChips: [],
         };
     }
 }
 
 const AI = new ResilientCareEngine();
 
-// 3. UI, NAVIGATION, VENT BOX
-// ==========================================
+// ─────────────────────────────────────────────────────────────
+// SECTION 11: UI, NAVIGATION, VENT BOX
+// ─────────────────────────────────────────────────────────────
 
 window.sendChip = function(text) {
     const inputArea = document.getElementById('chat-input-area');
@@ -507,7 +830,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             holdTimer = setTimeout(() => {
                 clearInterval(progressInterval);
-                // Redirects and ensures we start a new tracking ID
                 window.startNewSession(); 
             }, 1500); 
         }
@@ -526,21 +848,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 });
 
-// HOW IT WORKS MODAL LOGIC
-// ==========================================
-
 function openHowItWorks(e) {
     if (e) e.preventDefault(); 
     const modal = document.getElementById('howItWorksModal');
-    if (!modal) return; // Safety check
-    
+    if (!modal) return; 
     const modalBox = modal.querySelector('.modal-content-box');
-    
-    // 1. Unhide the box and lock the background scrolling
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; 
-    
-    // 2. Smooth fade-in animation
     setTimeout(() => {
         modal.style.opacity = '1';
         modalBox.style.transform = 'translateY(0)';
@@ -550,41 +864,36 @@ function openHowItWorks(e) {
 function closeHowItWorks() {
     const modal = document.getElementById('howItWorksModal');
     if (!modal) return;
-    
     const modalBox = modal.querySelector('.modal-content-box');
-    
-    // 1. Smooth fade-out animation
     modal.style.opacity = '0';
     modalBox.style.transform = 'translateY(20px)';
-    document.body.style.overflow = 'auto'; // Unlock background scrolling
-    
-    // 2. Hide the box completely after animation finishes
+    document.body.style.overflow = 'auto'; 
     setTimeout(() => {
         modal.style.display = 'none';
     }, 300);
 }
 
-// Close the pop-up 
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('howItWorksModal');
     if (event.target === modal) {
         closeHowItWorks();
     }
 });
-// 4. VENT BOX CHAT & AUTO-SAVE LOGIC
-// ==========================================
 
-// FORCE NEW SESSION LOGIC
-window.startNewSession = function() {
-    localStorage.removeItem('activeSessionId'); 
-    window.location.href = 'vent.html'; // Directs user to the vent box
-}
+// ─────────────────────────────────────────────────────────────
+// SECTION 12: VENT BOX CHAT & AUTO-SAVE LOGIC
+// ─────────────────────────────────────────────────────────────
+
+window.startNewSession = function () {
+    AI.reset();
+    localStorage.removeItem("activeSessionId");
+    window.location.href = "vent.html";
+};
 
 function autoSaveSession(role, text) {
     let history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
     const now = new Date();
     
-    // Session ID system to properly group sessions
     let sessionId = localStorage.getItem('activeSessionId');
     if (!sessionId) {
         sessionId = Date.now().toString(); 
@@ -596,7 +905,7 @@ function autoSaveSession(role, text) {
         text: text,
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: now.toLocaleDateString(),
-        sessionId: sessionId // Attach the stamp
+        sessionId: sessionId 
     });
     
     localStorage.setItem('resilientCareHistory', JSON.stringify(history));
@@ -618,33 +927,22 @@ function scrollToBottom() {
     if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-window.handleSend = function() {
-    const inputElement = document.getElementById('vent-input');
-    const userText = inputElement.value.trim();
-
+window.handleSend = function () {
+    const inputEl  = document.getElementById("vent-input");
+    const userText = inputEl.value.trim();
     if (!userText) return;
+    inputEl.value = "";
 
-    inputElement.value = '';
-    
     displayUserMessage(userText);
     showTypingIndicator();
 
-    setTimeout(() => {
+    AI.generateResponse(userText).then(res => {
         removeTypingIndicator();
-
-        AI.generateResponse(userText).then(aiResponse => {
-            displayChatMessage(aiResponse.text);
-            console.log("AI Auto-Selected Mode:", aiResponse.detectedMode);
-            
-            if (aiResponse.isComplete) {
-                setTimeout(() => {
-                    displayEndSessionUI();
-                }, 1000); 
-            }
-        });
-
-    }, 1500);
-}
+        displayChatMessage(res.text);
+        console.log(`[RC v3] intent=${res.detectedIntent} | mode=${res.detectedMode} | tone=${res.emotionalTone}`);
+        if (res.isComplete) setTimeout(() => displayEndSessionUI(), 1000);
+    });
+};
 
 function displayEndSessionUI() {
     const mainContent = document.querySelector('.vent-main');
@@ -701,24 +999,21 @@ function removeTypingIndicator() {
     if (indicator) indicator.remove();
 }
 
-// 5. Insights Page Graph Generation Logic
-// ==========================================
+// ─────────────────────────────────────────────────────────────
+// SECTION 13: INSIGHTS PAGE GRAPH GENERATION LOGIC
+// ─────────────────────────────────────────────────────────────
 
 function loadInsightsGraph() {
     try {
-        // THE STREAK COUNTER FROM MEMORY ENGINE
-        // =========================================================
         const profile = UserMemory.getProfile();
         const streakEl = document.getElementById('streak-counter');
         
         if (streakEl) {
             streakEl.innerText = profile.streakCount > 0 ? `${profile.streakCount} Days` : "Ready to start!";
         }
-        // =========================================================
 
         const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-        // Session ID  sync with History page
         const sessions = [];
         let currentSession = [];
         let lastSessionId = null;
@@ -734,7 +1029,6 @@ function loadInsightsGraph() {
                     isNewSession = true;
                 }
             } else {
-                // Fallback for older messages
                 const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
                 if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
                     isNewSession = true;
@@ -943,7 +1237,6 @@ function closeSessionModule() {
     document.getElementById('session-module').style.display = 'none';
 }
 
-// Moved CLEAR GRAPH DATA outside to prevent memory leaks
 window.clearGraphData = function() {
     const isConfirmed = confirm("Are you sure you want to delete all your session history? This cannot be undone.");
     
@@ -965,8 +1258,9 @@ window.clearGraphData = function() {
     }
 };
 
-// 6. HISTORY PAGE LOGIC
-// ==========================================
+// ─────────────────────────────────────────────────────────────
+// SECTION 14: HISTORY PAGE LOGIC
+// ─────────────────────────────────────────────────────────────
 
 function loadHistoryPage() {
     const feedContainer = document.getElementById('history-feed');
@@ -974,7 +1268,6 @@ function loadHistoryPage() {
 
     const history = JSON.parse(localStorage.getItem('resilientCareHistory')) || [];
 
-    // Session ID to sync perfectly with new sessions
     const sessions = [];
     let currentSession = [];
     let lastSessionId = null;
@@ -990,7 +1283,6 @@ function loadHistoryPage() {
                 isNewSession = true;
             }
         } else {
-            // Fallback
             const msgTimeObj = new Date(`${msg.date} ${msg.time}`);
             if (lastTimeObj && ((msgTimeObj - lastTimeObj) / (1000 * 60)) > 30) {
                 isNewSession = true;
@@ -1041,9 +1333,8 @@ function openCardInfo(title, messages) {
     document.getElementById('card-info-title').innerText = title;
     
     const body = document.getElementById('card-info-body');
-    body.innerHTML = ''; // Clear old chat
+    body.innerHTML = ''; 
 
-    // Render the chat bubbles
     messages.forEach(msg => {
         const bubble = document.createElement('div');
         bubble.className = msg.role === 'User' ? 'user-message-bubble' : 'ai-message-bubble';
@@ -1066,8 +1357,9 @@ function clearHistoryData() {
     }
 }
 
-// 7. SETTINGS PAGE LOGIC
-// ==========================================
+// ─────────────────────────────────────────────────────────────
+// SECTION 15: SETTINGS PAGE LOGIC
+// ─────────────────────────────────────────────────────────────
 
 const themes = {
     dark: { label: "Dark", className: "theme-dark" },
@@ -1105,5 +1397,4 @@ function updateThemeUI(activeTheme) {
 document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem('appTheme') || 'dark';
     updateThemeUI(savedTheme);
-
 });
