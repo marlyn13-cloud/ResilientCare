@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// SECTION 1: CRISIS SAFETY 
+// SECTION 1: CRISIS SAFETY GATE
 // ─────────────────────────────────────────────────────────────
 
 const CRISIS_PATTERNS = [
@@ -33,7 +33,7 @@ let _sentiment  = null;
 let _seedEmbeddings = {};
 let _modelsReady = false;
 
-//  descriptive labels  improve zero-shot accuracy
+//  descriptive labels improve zero-shot accuracy
 const INTENT_LABELS = {
     coursework_stress:  "student overwhelmed by too many assignments, coursework piling up, too much work due at once",
     burnout_doubt:      "student completely burned out, exhausted, questioning their major or whether college is worth it",
@@ -52,7 +52,7 @@ const INTENT_LABELS = {
     general_venting:    "student needs to vent or talk, not sure what is wrong, general stress without a specific issue",
 };
 
-// Seed phrases per intent 
+// Seed phrases per intent l
 const INTENT_SEEDS = {
     coursework_stress:  ["so much work due","assignments piling up","overwhelmed by coursework","can't keep up with everything","too many things to submit"],
     burnout_doubt:      ["completely burned out","no motivation left","questioning my major","don't know why I'm in school","exhausted and disconnected"],
@@ -362,7 +362,7 @@ const RESPONSE_POOLS = {
         ],
         action: [
             e => `Write down two things you've figured out this semester — anything, even if they feel small. Read them back. That's your reality, not the comparison.`,
-            e => `Next time you're in class and feel lost, try saying "can you clarify that?" — you'll find half the room had the same question. Silence isn't comprehension.`,
+            e => `Next time you're in class and feel lost, try saying "can you clarify that?" — you'll find half the room had the same question. Silence isnt comprehension.`,
             e => `Write one sentence about something you genuinely understand in ${e.subject ? e.subject : "your field"} right now. Own it.`,
         ],
         closure: [
@@ -692,6 +692,19 @@ const UserMemory = {
 // SECTION 10: CONVERSATION ENGINE
 // ─────────────────────────────────────────────────────────────
 
+const EXACT_MATCHES = {
+    "I feel sad. What are some steps to cope?": "sadness",
+    "I feel frustrated. How can I deal with this frustration?": "frustration",
+    "I feel anxious. How can I manage this anxiety?": "anxiety",
+    "I feel stressed so much coursework has to get done.": "coursework_stress",
+    "I missed an exam": "missed_deadline",
+    "I'm completely burned out. I don't know why I'm even in this major.": "burnout_doubt",
+    "Everyone else gets it but me.": "imposter_syndrome",
+    "Too many deadlines at once.": "deadline_panic",
+    "I'm so lost on this assignment.": "confusing_material",
+    "I got a bad grade and I feel crushed.": "harsh_grading"
+};
+
 class ResilientCareEngine {
     constructor() {
         this.history = [];
@@ -724,10 +737,23 @@ class ResilientCareEngine {
             }
         }
 
-        const [intentResult, emotion] = await Promise.all([
-            _modelsReady ? detectIntent(userInput) : Promise.resolve({ intent: "general_venting", confidence: 0.5 }),
-            _modelsReady ? detectEmotion(userInput) : Promise.resolve("neutral"),
-        ]);
+        let intentResult = null;
+        let emotion = "neutral";
+        const exactIntent = EXACT_MATCHES[userInput];
+
+        // FIX: Fast-path bypass. If they clicked a chip, bypass the ML model entirely!
+        if (exactIntent) {
+            intentResult = { intent: exactIntent, confidence: 1.0 };
+            if (["sadness", "frustration", "anxiety", "burnout_doubt", "harsh_grading", "deadline_panic", "coursework_stress"].includes(exactIntent)) {
+                emotion = "distressed";
+            }
+        } else {
+            // Otherwise, run the real ML pipeline
+            [intentResult, emotion] = await Promise.all([
+                _modelsReady ? detectIntent(userInput) : Promise.resolve({ intent: "general_venting", confidence: 0.5 }),
+                _modelsReady ? detectEmotion(userInput) : Promise.resolve("neutral"),
+            ]);
+        }
 
         const shouldSwitch = !this.state.currentIntent ||
             (intentResult.confidence > 0.75 && intentResult.intent !== this.state.currentIntent);
@@ -735,7 +761,7 @@ class ResilientCareEngine {
         if (shouldSwitch) {
             this.state.currentIntent = intentResult.intent;
             this.state.turn = 0;
-            this.state.usedResponseIds = new Set;
+            this.state.usedResponseIds = new Set();
             UserMemory.logSession(emotion, intentResult.intent);
         }
 
@@ -793,7 +819,8 @@ window.sendChip = function(text) {
     const inputElement = document.getElementById('vent-input');
     if (inputElement) {
         inputElement.value = text;
-        inputElement.focus(); 
+        // FIX: Auto-send the message immediately so the user doesn't have to click twice
+        handleSend(); 
     }
 }
 
@@ -936,12 +963,19 @@ window.handleSend = function () {
     displayUserMessage(userText);
     showTypingIndicator();
 
-    AI.generateResponse(userText).then(res => {
-        removeTypingIndicator();
-        displayChatMessage(res.text);
-        console.log(`[RC v3] intent=${res.detectedIntent} | mode=${res.detectedMode} | tone=${res.emotionalTone}`);
-        if (res.isComplete) setTimeout(() => displayEndSessionUI(), 1000);
-    });
+    AI.generateResponse(userText)
+        .then(res => {
+            removeTypingIndicator();
+            displayChatMessage(res.text);
+            console.log(`[RC v3] intent=${res.detectedIntent} | mode=${res.detectedMode} | tone=${res.emotionalTone}`);
+            if (res.isComplete) setTimeout(() => displayEndSessionUI(), 1000);
+        })
+        .catch(err => {
+            // FIX: Safely catch any AI processing errors so the app never freezes
+            removeTypingIndicator();
+            console.error("AI Generation Error:", err);
+            displayChatMessage("I'm having a little trouble processing that. Could you try saying that again?");
+        });
 };
 
 function displayEndSessionUI() {
@@ -987,16 +1021,16 @@ function displayChatMessage(messageText) {
 function showTypingIndicator() {
     const mainContent = document.querySelector('.vent-main');
     const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'ai-message-bubble typing-bubble';
+    typingDiv.className = 'ai-message-bubble typing-bubble'; // FIX: Removed static ID
     typingDiv.innerHTML = '<span></span><span></span><span></span>';
     mainContent.appendChild(typingDiv);
     scrollToBottom();
 }
 
 function removeTypingIndicator() {
-    const indicator = document.getElementById('typing-indicator');
-    if (indicator) indicator.remove();
+    // FIX: Removes all typing indicators to prevent UI glitches if user sends rapidly
+    const indicators = document.querySelectorAll('.typing-bubble');
+    indicators.forEach(ind => ind.remove());
 }
 
 // ─────────────────────────────────────────────────────────────
