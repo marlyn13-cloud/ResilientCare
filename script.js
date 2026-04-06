@@ -584,7 +584,7 @@ const RESPONSE_POOLS = {
         ],
         action: [
             e => `Right now: send a short, direct email to ${e.professor ? e.professor : "the professor"}. Acknowledge you missed it, explain briefly if there's a real reason, and ask if there are any options. Three to four sentences.`,
-            e => `Check your LMS — sometimes late submission portals stay open even after the deadline. Worth checking before you email.`,
+            e => `Check your syllabus/assignment portal — sometimes late submission portals stay open even after the deadline. Worth checking before you email.`,
         ],
         closure: [
             e => `You handled it. You took action instead of avoiding. Whatever comes next, you gave yourself the best possible shot.`,
@@ -628,31 +628,41 @@ function _getStage(turn) {
     return "closure";
 }
 
-// 1. ACKNOWLEDGMENTS: User is giving a short answer. (ADVANCES SCRIPT)
+// 1. ACKNOWLEDGMENTS: Valid short answers or nods. (ADVANCES SCRIPT)
 function _isAcknowledgment(text) {
     const t = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
     const acks = [
         "yes", "yeah", "yea", "yep", "yup", "sure", 
         "ok", "okay", "alright", "hmm", "mhm", "uh huh", 
-        "no", "nope", "nah", "makes sense", "got it", "i see", "right"
+        "no", "nope", "nah", "makes sense", "got it", "i see", "right", "true", "exactly"
     ];
     return acks.includes(t);
 }
 
-// 2. RESISTANCE: User is stuck. (HOLDS SCRIPT)
-function _isResistance(text) {
-    // If it's a known acknowledgment (like "no" or "yea"), it is NOT resistance
-    if (_isAcknowledgment(text)) return false;
-    
+// 2. FILLERS: Uncertainty or non-committal noises. (PROMPTS FOR MORE)
+function _isFiller(text) {
+    if (_isAcknowledgment(text)) return false; // Acks are not fillers
     const t = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
-    return t.length <= 3 || /^(idk|idc|not sure|nothing|maybe|fine|whatever|i guess|dunno|idk lol|not really)$/i.test(t) || t.includes("don't know") || t.includes("dont know");
+    const fillers = [
+        "not sure", "maybe", "i guess", "dunno", "not really", 
+        "lol", "haha", "hm", "ugh", "oof", "eh", "meh", "wow", "damn"
+    ];
+    return fillers.includes(t);
 }
 
-// 3. FILLERS: (HOLDS SCRIPT)
-function _isFiller(text) {
+// 3. RESISTANCE: Complete shut down or blanking. (HOLDS SCRIPT)
+function _isResistance(text) {
+    if (_isAcknowledgment(text) || _isFiller(text)) return false; 
+    
     const t = text.toLowerCase().trim().replace(/[.,!?]+$/, '');
-    const fillers = ["lol", "haha", "hm", "ugh", "oof", "eh", "meh", "wow", "damn"];
-    return fillers.includes(t);
+    
+    if (/^(idk|idc|nothing|whatever|nevermind|forget it)$/i.test(t)) return true;
+    if (t.includes("don't know") || t.includes("dont know")) return true;
+    
+    // If it's incredibly short (like "?", "..") and not in the lists above, treat as resistance
+    if (t.length <= 2) return true;
+    
+    return false;
 }
 
 // 4. CLOSING: User is ending the chat.
@@ -730,7 +740,7 @@ const UserMemory = {
 };
 
 // ─────────────────────────────────────────────────────────────
-// SECTION 10: CONVERSATION ENGINE
+// SECTION 10: CONVERSATION ENGINE (Production Fix)
 // ─────────────────────────────────────────────────────────────
 
 const EXACT_MATCHES = {
@@ -751,14 +761,14 @@ function generateContextualEcho(userInput, turn) {
     const text = userInput.trim().replace(/[.,!?]+$/, '');
     const lower = text.toLowerCase();
 
-    if (turn === 0 || _isResistance(lower) || _isFiller(lower) || text.length > 60) return "";
+    if (turn === 0 || _isResistance(lower) || _isFiller(lower)) return "";
 
     if (_isAcknowledgment(lower)) {
         const basicValidations = ["Got it. ", "Makes sense. ", "I hear you. ", "Okay. "];
         return basicValidations[Math.floor(Math.random() * basicValidations.length)];
     }
 
-    if (text.split(" ").length <= 8) {
+    if (text.split(" ").length <= 8 && text.length < 60) {
         const echoes = [
             `"${text}" — I hear that. `,
             `It makes total sense that ${lower} is your focus. `,
@@ -845,9 +855,10 @@ class ResilientCareEngine {
         // --- TRACK FATIGUE ---
         const isRes = _isResistance(userInput);
         const isFil = _isFiller(userInput);
-        const isAck = _isAcknowledgment(userInput);
         
-        if (isRes || isFil || isAck || userInput.trim().length <= 4) {
+        // FIX: DO NOT track fatigue for valid Acknowledgments (like "no" or "yeah")
+        // ONLY increment fatigue if the user is truly stalling or blanking
+        if (isRes || isFil) {
             this.state.consecutiveHolds++;
         } else {
             this.state.consecutiveHolds = 0;
@@ -908,9 +919,10 @@ class ResilientCareEngine {
             
             if (isFil) {
                 const softContinue = [
-                    "Got it. Can you tell me a little bit more about that?",
-                    "Okay. What's the main thing on your mind about it?",
-                    "I hear you. Whenever you're ready, feel free to expand on that.",
+                    "It's okay to be unsure. Can you tell me a bit more about what's on your mind?",
+                    "That makes sense. If you had to guess, what would you say?",
+                    "No worries. What's the main thing standing out to you right now?",
+                    "I'm listening. Take your time and feel free to expand on that.",
                 ];
                 const text = softContinue[Math.floor(Math.random() * softContinue.length)];
                 this.history.push({ role: "assistant", text });
