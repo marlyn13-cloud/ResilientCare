@@ -8,6 +8,30 @@
     <script src="script.js" defer></script>
 </head>
 <body>
+    <div id="consentModal" class="consent-overlay">
+    <div class="consent-box">
+        <button class="consent-back-btn" onclick="window.location.href='index.html'">← Back</button>
+        
+        <h2 class="consent-title">Before we begin</h2>
+        <p class="consent-subtitle">Two quick things to confirm.</p>
+        
+        <div class="consent-options">
+            <label class="consent-label" for="ageCheck">
+                <input type="checkbox" id="ageCheck" class="consent-checkbox" onchange="validateConsent()">
+                <span class="custom-checkbox"></span>
+                <span class="consent-text">I confirm I am 18 years of age or older.</span>
+            </label>
+            
+            <label class="consent-label" for="medicalCheck">
+                <input type="checkbox" id="medicalCheck" class="consent-checkbox" onchange="validateConsent()">
+                <span class="custom-checkbox"></span>
+                <span class="consent-text">I understand ResilientCare is not a medical service, not a crisis line, and does not replace professional therapy or diagnosis. It's a tool for self-reflection and emotional support.</span>
+            </label>
+        </div>
+        
+        <button id="enterBtn" class="btn-enter" disabled onclick="closeConsentModal()">Enter ResilientCare</button>
+    </div>
+</div>
     <div class="app-single-column">
         
         <nav class="vent-nav">

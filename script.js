@@ -1073,6 +1073,40 @@ function navigateTo(screenId) {
     const target = document.getElementById(screenId);
     if(target) target.style.display = 'block';
 }
+// ─────────────────────────────────────────────────────────────
+// CONSENT MODAL AUTO-TRIGGER ON VENT.HTML
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if we are currently on the vent.html page
+    if (window.location.pathname.includes('vent.html')) {
+        const modal = document.getElementById('consentModal');
+        const mainContent = document.querySelector('.vent-main');
+        const inputArea = document.querySelector('.input-area');
+        const nav = document.querySelector('.vent-nav');
+        if (modal) modal.style.display = 'flex';
+    }
+});
+
+// Update the Enter button logic to un-blur the screen
+window.closeConsentModal = function() {
+    const modal = document.getElementById('consentModal');
+    const mainContent = document.querySelector('.vent-main');
+    const nav = document.querySelector('.vent-nav');
+    
+    if (modal) modal.style.display = 'none';
+    
+    if (mainContent) mainContent.style.filter = 'none';
+    if (nav) nav.style.filter = 'none';
+    
+    // Resume AI initialization
+    AI.reset();
+    localStorage.removeItem("activeSessionId");
+};
+
+// Update the Back button to redirect to home
+window.goBackToHome = function() {
+    window.location.href = 'index.html';
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     const dateEl = document.getElementById('current-date');
@@ -1635,7 +1669,68 @@ function clearHistoryData() {
         loadHistoryPage(); 
     }
 }
+// ─────────────────────────────────────────────────────────────
+// SECTION: CONSENT MODAL LOGIC
+// ─────────────────────────────────────────────────────────────
 
+// Called when the "Hold to Vent" ring completes
+window.startNewSession = function () {
+    const modal = document.getElementById('consentModal');
+    if (modal) {
+        modal.style.display = 'flex'; // Show the consent popup
+    } else {
+        // Fallback just in case the modal isn't on the page
+        triggerFinalSessionStart(); 
+    }
+};
+
+// Checks if both boxes are ticked to enable the Enter button
+window.validateConsent = function() {
+    const ageChecked = document.getElementById('ageCheck').checked;
+    const medicalChecked = document.getElementById('medicalCheck').checked;
+    const enterBtn = document.getElementById('enterBtn');
+    
+    if (ageChecked && medicalChecked) {
+        enterBtn.classList.add('active');
+        enterBtn.disabled = false;
+    } else {
+        enterBtn.classList.remove('active');
+        enterBtn.disabled = true;
+    }
+};
+
+// Called when the user clicks the back arrow
+window.goBackToHome = function() {
+    const modal = document.getElementById('consentModal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Reset the checkboxes for next time
+        document.getElementById('ageCheck').checked = false;
+        document.getElementById('medicalCheck').checked = false;
+        validateConsent();
+    }
+};
+
+// Called when the user clicks "Enter ResilientCare"
+window.closeConsentModal = function() {
+    const modal = document.getElementById('consentModal');
+    if (modal) modal.style.display = 'none';
+    
+    // Proceed to actually start the chat session
+    triggerFinalSessionStart();
+};
+
+// The actual logic that was previously inside startNewSession
+function triggerFinalSessionStart() {
+    AI.reset();
+    localStorage.removeItem("activeSessionId");
+    
+    // Only redirect if we aren't already on vent.html
+    if (!window.location.pathname.includes('vent.html')) {
+        window.location.href = "vent.html";
+    }
+}
 // ─────────────────────────────────────────────────────────────
 // SECTION 15: SETTINGS PAGE LOGIC
 // ─────────────────────────────────────────────────────────────
