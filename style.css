@@ -815,7 +815,7 @@ textarea::placeholder {
     flex-wrap: wrap; 
 }
 
-.btn-insights, .btn-history, .btn-settings {
+.btn-insights, .btn-history, .btn-settings, .btn-therapy {
     background-color: var(--bg-card);
     color: var(--text-main);
     padding: 12px 20px;
@@ -826,7 +826,7 @@ textarea::placeholder {
     transition: background 0.2s;
 }
 
-.btn-insights:hover, .btn-history:hover, .btn-settings:hover {
+.btn-insights:hover, .btn-history:hover, .btn-settings:hover, .btn-therapy:hover {
     background-color: var(--bg-main);
     border-color: var(--primary-accent);
 }
