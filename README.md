@@ -115,6 +115,8 @@ This scenario demonstrates how the  AI pipeline processes severe emotional exhau
 
 -  **Interactive Insights:** Real-time streak tracking, session counting, and mapping of user entries.
 
+-  ** Find a Therapist:** Also provides a therapy link for real life help. 
+
 ------------------------------------------------------------------------------------------------------------------------------------------ 
 
 # 🛠️ Technology Stack
