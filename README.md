@@ -165,7 +165,7 @@ Building ResilientCare pushed me to grow as an AI Engineer. A few of my takeaway
   
 * **JavaScript State Management:** Instead of relying on heavy frameworks like React, I strengthened my core DOM manipulation skills with JavaScript. I learned how to  pass state (like the active theme or the user's emotional data) across multiple HTML pages using `localStorage` and dynamic CSS variables.
 
-* ** RAG Pipeline:** Instead of only relying on the Hugging Face models, I added a more comprehensive approach that includes a RAG Pipeline. The RAG Pipeline itself helps the conversation not to sound repetitive to the user.
+* **RAG Pipeline:** Instead of only relying on the Hugging Face models, I added a more comprehensive approach that includes a RAG Pipeline. The RAG Pipeline itself helps the conversation not to sound repetitive to the user.
 ---------------------------------------------------------------------------------------
 
 # 💻 Try it out for FREE!!
