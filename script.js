@@ -1,5 +1,5 @@
 // ============================================================
-// ResilientCare — Brain v3.0  (Zero API · 100% Local Models)
+// ResilientCare — Brain v3.0  (Zero API · 100% Local Models + RAG)
 // ============================================================
 
 // ─────────────────────────────────────────────────────────────
@@ -97,6 +97,9 @@ async function loadModels() {
 
     setStatus("Building intent index…");
     await _buildSeedEmbeddings();
+
+    setStatus("Loading knowledge base…");
+    await buildRAGEmbeddings();
 
     _modelsReady = true;
     console.log("ResilientCare v3: all models ready.");
@@ -296,28 +299,28 @@ const RESPONSE_POOLS = {
     },
     harsh_grading: {
         opener: [
-            e => `${e.grade ? `A ${e.grade}` : "A grade like that"} when you worked hard on it stings in a really specific way. What did the feedback actually say?`,
-            e => `Getting crushed on ${e.task ? `a ${e.task}` : "an assignment"} when you put effort in is such a deflating experience. What part hit hardest?`,
-            e => `That gut-drop feeling when you see the grade is rough. Was this ${e.task ? `the ${e.task}` : "something"} you felt good about going in, or were you already nervous?`,
+            e => `${e.grade ? `A ${e.grade}` : "A grade like that"} stings in a really specific way, especially if you worked hard on it. Was this a surprise, or did you have a feeling it might go this way?`,
+            e => `Getting crushed on ${e.task ? `a ${e.task}` : "an assignment"} is such a deflating experience. What part of it is hitting you the hardest right now?`,
+            e => `That gut-drop feeling when you see a bad score is rough. Were you feeling okay about it when you submitted it, or were you already nervous?`,
         ],
         explore: [
-            e => `Let's separate how it was said from what it was pointing at. ${e.professor ? `What did ${e.professor} specifically flag as the issue?` : "What was the actual technical critique underneath?"}`,
-            e => `If you had to guess the one thing that cost the most points — even if you disagree — what would it be?`,
-            e => `Was this consistent with feedback you've gotten from this class before, or did something feel off?`,
+            e => `Let's look at the actual ${e.task ? e.task : "work"} for a second. If you had to guess where things went off track, what would it be?`,
+            e => `Sometimes a bad score happens because the material was genuinely confusing, and sometimes it's just about how much time you had. Which one feels more true here?`,
+            e => `When you look back at how you prepared for this, is there anything that stands out to you now?`,
         ],
         bridge: [
-            e => `One grade is data, not destiny. The useful question isn't "why did I fail" but "what's one concrete thing I'd do differently?" What's your honest answer?`,
-            e => `Bad grades are almost always recoverable — but only if you can find the one specific thing to fix. What's the clearest signal in the feedback?`,
-            e => `You're allowed to be frustrated. Then — when the dust settles — we can turn the feedback into a one-item checklist for the next assignment.`,
+            e => `One grade is just a single data point, not your whole academic identity. The most useful thing right now is figuring out the one concrete thing to adjust for next time.`,
+            e => `Bad grades are recoverable, especially if you can isolate what exactly went wrong. You're allowed to be frustrated today, but tomorrow we look at the "why."`,
+            e => `It's easy to spiral and think this ruins everything. It doesn't. We just need to figure out the gap between what was expected and what happened.`,
         ],
         action: [
-            e => `Tonight, close the grade notification. Tomorrow, read the rubric and circle only the area that lost the most points. Just read it.`,
-            e => `For your next ${e.task ? e.task : "assignment"}, add one quick checklist item based on what they flagged. One line. That's how you use this.`,
-            e => `If you feel strongly this was unfair, email ${e.professor ? e.professor : "the professor"} and ask to discuss the rubric. Most will talk through it.`,
+            e => `Tonight, close the portal and stop looking at the grade. Tomorrow, try to find the one specific area that cost you the most points. Just find it.`,
+            e => `For your next ${e.task ? e.task : "assignment"}, add one quick checklist item based on what went wrong here. One line. That's how you use this.`,
+            e => `If you are completely in the dark about why the score is what it is, a quick email to ${e.professor ? e.professor : "the professor"} asking for clarification is your best move.`,
         ],
         closure: [
-            e => `You showed up, you submitted, you faced the feedback. That's what students who grow do.`,
-            e => `One bad grade changes nothing about your overall trajectory if you use it as information. You've got this.`,
+            e => `You showed up, you submitted, and you're facing the disappointment instead of ignoring it. That's what students who grow do.`,
+            e => `One bad score changes nothing about your overall trajectory if you use it as information. You've got this.`,
         ],
     },
     confusing_material: {
@@ -617,6 +620,64 @@ const RESPONSE_POOLS = {
 };
 
 // ─────────────────────────────────────────────────────────────
+// SECTION 7.5: LOCAL RAG KNOWLEDGE BASE & RETRIEVAL
+// ─────────────────────────────────────────────────────────────
+
+const RAG_KNOWLEDGE_BASE = [
+    // Stress & Panic
+    { id: "rag_stress_1", intent: "coursework_stress", text: "Try the Pomodoro technique: set a timer for 25 minutes of focused work, followed by 5 minutes of rest. It breaks the wall of overwhelm into a small block." },
+    { id: "rag_stress_2", intent: "coursework_stress", text: "Write out a 'To-Don't' list. Explicitly write down the tasks you are NOT going to worry about today, and pick just one to focus on." },
+    { id: "rag_panic_1", intent: "deadline_panic", text: "Close every single browser tab except the one assignment you need to start. Minimizing visual clutter directly reduces cognitive overload." },
+    
+    // Burnout & Imposter
+    { id: "rag_burnout_1", intent: "burnout_doubt", text: "Step completely away from the screen. Go for a 15-minute walk outside without your phone or any audio. Let your visual field expand." },
+    { id: "rag_imposter_1", intent: "imposter_syndrome", text: "Write down three bugs you successfully fixed or concepts you mastered this semester. The proof of your capability is in your past work, not in how you feel right now." },
+    
+    // Academic Friction ( HARSH GRADING ENTRIES)
+    { id: "rag_confuse_1", intent: "confusing_material", text: "Use rubber duck debugging. Explain what the syntax or assignment is supposed to do out loud to an empty room, line by line. The gap in logic usually reveals itself." },
+    { id: "rag_grade_1", intent: "harsh_grading", text: "When you realize a bad grade is tied to your own study habits, the best move is turning that guilt into a system. Block out specific study windows on your calendar a week before the next exam." },
+    { id: "rag_grade_2", intent: "harsh_grading", text: "If an assignment lacked feedback, reach out to the professor during office hours. Don't argue the grade, just ask: 'How can I align my next submission with your expectations?'" },
+    { id: "rag_grade_3", intent: "harsh_grading", text: "One bad grade is a data point, not a trend. Look at the syllabus and calculate exactly how much this actually impacts your final grade—it is usually much less than your anxiety is telling you." },
+
+    // General
+    { id: "rag_general_1", intent: "general_venting", text: "Try the 5-4-3-2-1 grounding method. Acknowledge 5 things you see, 4 you can touch, 3 you hear, 2 you smell, and 1 you taste to pull your nervous system back to the present." }
+];
+
+let _ragEmbeddings = [];
+
+async function buildRAGEmbeddings() {
+    for (const item of RAG_KNOWLEDGE_BASE) {
+        const vec = await _embed(item.text);
+        _ragEmbeddings.push({ ...item, vector: vec });
+    }
+    console.log(`RAG Pipeline ready: Embedded ${_ragEmbeddings.length} strategies.`);
+}
+
+async function retrieveBestStrategy(userQuery, targetIntent, currentTurn) {
+    if (_ragEmbeddings.length === 0) return null;
+
+    const queryVec = await _embed(userQuery);
+    let bestMatch = null;
+    let highestScore = -1;
+
+    for (const item of _ragEmbeddings) {
+        if (item.intent !== targetIntent && item.intent !== "general_venting") continue;
+
+        const score = _cosine(queryVec, item.vector);
+        if (score > highestScore) {
+            highestScore = score;
+            bestMatch = item;
+        }
+    }
+
+    // Require a stronger math score (0.55) to interrupt early exploration phases .
+    // Standard confidence (0.4) for the later action phases .
+    const requiredConfidence = currentTurn < 3 ? 0.55 : 0.4;
+
+    return highestScore > requiredConfidence ? bestMatch : null;
+}
+
+// ─────────────────────────────────────────────────────────────
 // SECTION 8: RESPONSE SELECTOR & CLASSIFIERS
 // ─────────────────────────────────────────────────────────────
 
@@ -659,7 +720,6 @@ function _isResistance(text) {
     if (/^(idk|idc|nothing|whatever|nevermind|forget it)$/i.test(t)) return true;
     if (t.includes("don't know") || t.includes("dont know")) return true;
     
-    // If it's incredibly short (like "?", "..") and not in the lists above, treat as resistance
     if (t.length <= 2) return true;
     
     return false;
@@ -756,30 +816,36 @@ const EXACT_MATCHES = {
     "I got a bad grade and I feel crushed.": "harsh_grading"
 };
 
-// THE ECHO ENGINE
 function generateContextualEcho(userInput, turn) {
     const text = userInput.trim().replace(/[.,!?]+$/, '');
     const lower = text.toLowerCase();
 
+    // 1. Skip on the first turn, or if the user is stalling
     if (turn === 0 || _isResistance(lower) || _isFiller(lower)) return "";
 
-    if (_isAcknowledgment(lower)) {
-        const basicValidations = ["Got it. ", "Makes sense. ", "I hear you. ", "Okay. "];
+    // 2. Catch conversational agreements to prevent "'sounds good' - that's real"
+    const extendedAcks = ["sounds good", "alright", "will do", "i will", "gotcha", "makes sense"];
+    if (_isAcknowledgment(lower) || extendedAcks.some(ack => lower.includes(ack))) {
+        // Return a simple nod, or sometimes nothing at all so it isn't repetitive
+        const basicValidations = ["Got it. ", "Makes sense. ", "I hear you. ", ""];
         return basicValidations[Math.floor(Math.random() * basicValidations.length)];
     }
 
-    if (text.split(" ").length <= 8 && text.length < 60) {
+    // 3. Pronoun Check: Prevents grammar breaks like "It makes sense that [i will get through this]..."
+    const hasFirstPerson = /\b(i|my|me|mine|we|our|us)\b/i.test(lower);
+
+    // 4. Strict Echoing: Only echo very short, noun-phrase-like inputs (1-5 words) without pronouns
+    const wordCount = text.split(" ").length;
+    if (wordCount <= 5 && !hasFirstPerson) {
         const echoes = [
             `"${text}" — I hear that. `,
-            `It makes total sense that ${lower} is your focus. `,
-            `Yeah, ${lower}. That's completely valid. `,
-            `Got it. "${text}". `,
-            `I can see why ${lower} would be the main thing right now. `,
-            `"${text}" — that's incredibly real. `
+            `It makes total sense that ${lower} is standing out to you right now. `,
+            `Yeah, ${lower}. That's completely valid. `
         ];
         return echoes[Math.floor(Math.random() * echoes.length)];
     }
 
+    // 5. Default generic validations for longer sentences
     const validations = [
         "I hear exactly what you're saying. ",
         "That makes a lot of sense. ",
@@ -787,7 +853,9 @@ function generateContextualEcho(userInput, turn) {
         "I completely understand where you're coming from. ",
         "That's incredibly valid. "
     ];
-    return validations[Math.floor(Math.random() * validations.length)];
+    
+    // Only return a generic validation 40% of the time so it doesn't sound repetitive
+    return Math.random() > 0.6 ? validations[Math.floor(Math.random() * validations.length)] : "";
 }
 
 class ResilientCareEngine {
@@ -852,19 +920,15 @@ class ResilientCareEngine {
             UserMemory.logSession(emotion, intentResult.intent);
         }
 
-        // --- TRACK FATIGUE ---
         const isRes = _isResistance(userInput);
         const isFil = _isFiller(userInput);
         
-        // FIX: DO NOT track fatigue for valid Acknowledgments (like "no" or "yeah")
-        // ONLY increment fatigue if the user is truly stalling or blanking
         if (isRes || isFil) {
             this.state.consecutiveHolds++;
         } else {
             this.state.consecutiveHolds = 0;
         }
 
-        // --- CLOSING CATCH ---
         if (_isClosing(userInput) && this.state.turn > 1) {
             const snapshotIntent = this.state.currentIntent; 
             const pool = RESPONSE_POOLS[snapshotIntent] || RESPONSE_POOLS.general_venting;
@@ -881,7 +945,6 @@ class ResilientCareEngine {
             return { text: closureText, detectedMode: "Balanced", detectedIntent: snapshotIntent, emotionalTone: emotion, isComplete: true, suggestedChips: [] };
         }
 
-        // --- FATIGUE EXIT ---
         if (this.state.consecutiveHolds >= 2 && this.state.turn > 0) {
             const snapshotIntent = this.state.currentIntent;
             const closingMsg = "It's completely okay if you don't have the energy to dive into this right now. Sometimes just acknowledging that you're overwhelmed is enough for one day. I'll let you rest, but I'm always here when you're ready.";
@@ -902,7 +965,6 @@ class ResilientCareEngine {
             };
         }
 
-        // --- EMPATHY & FILLER CATCHES ---
         if (this.state.turn > 0) {
             if (isRes) {
                 const responses = [
@@ -930,9 +992,28 @@ class ResilientCareEngine {
             }
         }
 
-        // --- STANDARD RESPONSE ADVANCEMENT ---
+        // --- STANDARD RESPONSE ADVANCEMENT & RAG INJECTION ---
         this.state.entities = extractEntities(this.history);
-        const { text: rawText, id } = selectResponse(this.state.currentIntent, this.state.turn, this.state.entities, this.state.usedResponseIds);
+        
+        let rawText, id;
+        
+        // ALLOW RAG TO TRIGGER EARLIER (Turns 1-4) IF THERE IS A STRONG MATCH
+        if (this.state.turn >= 1 && this.state.turn <= 4 && _modelsReady) {
+            // Pass the current turn into the RAG engine so it knows how strict to be
+            const ragMatch = await retrieveBestStrategy(userInput, this.state.currentIntent, this.state.turn);
+            if (ragMatch && !this.state.usedResponseIds.has(ragMatch.id)) {
+                rawText = ragMatch.text;
+                id = ragMatch.id;
+            }
+        }
+        
+        // Fallback to static deterministic pools if RAG didn't find a match
+        if (!rawText) {
+            const poolRes = selectResponse(this.state.currentIntent, this.state.turn, this.state.entities, this.state.usedResponseIds);
+            rawText = poolRes.text;
+            id = poolRes.id;
+        }
+
         this.state.usedResponseIds.add(id);
 
         let echoText = generateContextualEcho(userInput, this.state.turn);
