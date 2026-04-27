@@ -128,7 +128,9 @@ This scenario demonstrates how the  AI pipeline processes severe emotional exhau
 **Machine Learning / AI:**
 
 - Transformers.js
-
+  
+- RAG Pipeline
+  
 - WebAssembly (WASM)
 
 - Hugging Face Models (mobilebert, distilbert)
@@ -157,10 +159,11 @@ Building ResilientCare pushed me to grow as an AI Engineer. A few of my takeaway
 
 * **Designing for Human-Computer Interaction (HCI):** I learned that in mental health applications, UI *is* UX. Building the "Hold to Vent" orb and the dynamic Nocturnal  theme taught me how color theory, CSS animations, and simplified navigation directly impact user cognitive load.
   
-* **Deterministic AI Safety:** I realized that raw LLM text generation isn't always the right tool. Building the resistance protocol taught me how to combine deterministic state-machine logic with AI sentiment analysis to create a safer and a better user experience.
+* **Deterministic AI Safety:** I realized that raw LLM text generation isn't always the right tool. Building the resistance protocol taught me how to combine deterministic state-machine logic with AI sentiment analysis to create a safer and better user experience.
   
 * **JavaScript State Management:** Instead of relying on heavy frameworks like React, I strengthened my core DOM manipulation skills with JavaScript. I learned how to  pass state (like the active theme or the user's emotional data) across multiple HTML pages using `localStorage` and dynamic CSS variables.
 
+* ** RAG Pipeline:** Instead of only relying on the Hugging Face models, I added a more comprehensive approach that includes a RAG Pipeline. The RAG Pipeline itself helps the conversation not to sound repetitive to the user.
 ---------------------------------------------------------------------------------------
 
 # 💻 Try it out for FREE!!
