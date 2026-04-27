@@ -56,33 +56,30 @@ Because pure LLM text-generation can hallucinate and is generally unsafe for men
 This scenario demonstrates how the  AI pipeline processes severe emotional exhaustion by prioritizing empathetic validation and cognitive recovery over task productivity. It also highlights the engine's built-in conversational fatigue detection.
 
 **1. Initial Input & Inference**
-> **User:** *"I'm completely burned out. I don't know why I'm even in this major."*
-* **NLP Engine:** Evaluates the text and outputs `Distress: 85%` and `Intent: Burnout and Doubt`.
+> **User:** *"I'm so lost on this assignment."*
+* **NLP Engine:** Evaluates the text and outputs `Distress: 80%` and `Intent: Confusing Material`.
 
 **2. State Machine Routing**
 * **System Action:** The Empathetic Routing protocol activates. It validates the emotional weight of the statement before gently asking for a timeline.
   
-> **AI:** *"I can tell this is really weighing on you right now. Burnout is its own kind of heavy — not just tired, but that specific hollowness where nothing feels like it matters. How long have you been running on empty?"*
+> **AI:** *"Being lost on a assignment is frustrating, but it's almost never "I'm not smart enough" - it's usually one missing piece. Where exactly does your understanding break down?"*
 
-> **User:** *"a while now"*
+> **User:** *"The syntax"*
 
-> **AI:** *"Yeah, a while now. That's completely valid. There's a difference between burning out on the workload and burning out on the actual field. Which feels closer to true?"*
+> **AI:** *"Yeah, the syntax. That's completely valid. Have you tried explaining what you think it's asking back to yourself out loud? Sometimes that alone reveals where the gap is."*
 
-> **User:** *"workload"*
+> **User:** *"No"*
 
-> **AI:** *""workload" — that's incredibly real. When you imagine a full day off with zero guilt — no studying — what comes up? Relief, or does the anxiety about falling behind follow you?"*
+> **AI:** *""Okay. When you read the assignment, at what specific sentence or concept does your brain go "wait what" ?"*
 
-> **User:** *"mostly relief"*
+> **User:** *"The wording"*
 
-> **AI:** *"Yeah, mostly relief. That's completely valid. The doubt is real, but it's speaking through exhaustion. You don't have to figure out your whole future — just the next few hours.?"*
+> **AI:** *"The wording" - I hear that. Forget the assignment for a second. Google just the one term you keep hitting and can't get ast. Just one definition. That's often all it takes."*
 
 >**User:** *"alright sounds good"*
 
-> **AI:** *"Yeah, alright sounds good. That's completely valid. Can you give yourself two hours today that belong only to you, with zero school attached? No planning, no studying, no "productive" anything?"*
+> **AI:** *"Being confused doesn't mean you don't belong in this class. It means you're working at the edge of your current understanding - which is exactly where learning happens."*
 
->**User:** *"sure"*
-
->**AI:** *"Makes sense. Burnout is reversible. It doesn't mean you made the wrong choice — it means you've been pushing without recovering. Recovery is the work right now."*
 
 --Session Complete--
 
