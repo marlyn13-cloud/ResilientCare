@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ResilientCare</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="app-single-column">
+        
+        <nav class="vent-nav">
+            <div class="nav-left">
+                <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
+            </div>
+            <span class="nav-title">SETTINGS</span>
+            <div class="nav-right" style="min-width: 80px; display: flex; justify-content: flex-end;">
+                <span style="font-size: 22px; color: #9ca3af;">👤</span>
+            </div>
+        </nav>
+
+        <div class="settings-container">
+            
+            <div class="settings-card">
+                <h3 class="settings-card-title">Color Theme</h3>
+                <div class="theme-options">
+                    <button class="theme-btn active-theme" id="theme-dark" onclick="setTheme('dark')">Dark ✓</button>
+                    <button class="theme-btn" id="theme-lightPink" onclick="setTheme('lightPink')">Light Pink</button>
+                    <button class="theme-btn" id="theme-lightBlue" onclick="setTheme('lightBlue')">Light Blue</button>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3 class="settings-card-title">
+                    <span style="font-size: 16px;">ⓘ</span> About
+                </h3>
+                <p class="settings-text">
+                    Version 1.0<br>
+                    Privacy Note: We do not collect Personal information.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

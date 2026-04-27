@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History Page - ResilientCare</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers/dist/transformers.min.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body onload="loadHistoryPage()">
+    <div class="app-single-column">
+        
+        <nav class="vent-nav">
+            <div class="nav-left">
+                <button class="icon-btn" onclick="window.location.href='index.html'">← Home</button>
+            </div>
+            <span class="nav-title">History</span>
+            
+            <div class="nav-right" style="min-width: 80px; display: flex; justify-content: flex-end;">
+                <button class="btn-clear" onclick="clearHistoryData()">Clear</button>
+            </div>
+        </nav>
+
+        <div class="history-actions" style="max-width: 800px; margin: 0 auto; padding: 20px 20px 0; display: flex; justify-content: space-between; width: 100%; box-sizing: border-box;">
+            <button class="btn-create" onclick="window.location.href='vent.html'">+ Start New Session</button>
+            <button class="btn-view-insights" onclick="window.location.href='insights.html'">View Insights ➔</button>
+        </div> 
+
+        <div class="history-container" id="history-feed">
+            </div>
+
+        <div id="session-overlay" class="overlay" style="display: none;">
+            <div class="content card-info">
+                <div class="header">
+                    <h3 id="card-info-title">Session Details</h3>
+                    <button class="close-modal-btn" onclick="hideSessionDetails()">✕</button>
+                </div>
+                <div class="card-info-body" id="card-info-body">
+                    </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
