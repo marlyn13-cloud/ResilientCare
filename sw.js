@@ -22,7 +22,6 @@ self.addEventListener('install', (event) => {
       console.log('[Service Worker] Caching static assets');
       return cache.addAll(STATIC_ASSETS).catch((err) => {
         console.warn('[Service Worker] Some assets failed to cache:', err);
-        // Continue even if some assets fail to cache
         return Promise.resolve();
       });
     })
@@ -50,33 +49,27 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event: serve from cache, fall back to network
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests and certain methods
   if (!event.request.url.startsWith('http')) {
     return;
   }
 
-  // Handle GET requests
   if (event.request.method !== 'GET') {
     return;
   }
 
   event.respondWith(
-    // Try cache first
     caches.match(event.request).then((response) => {
       if (response) {
         console.log('[Service Worker] Serving from cache:', event.request.url);
         return response;
       }
 
-      // If not in cache, try network
       return fetch(event.request)
         .then((response) => {
-          // Don't cache non-successful responses
           if (!response || response.status !== 200 || response.type === 'error') {
             return response;
           }
 
-          // Cache successful responses for future use
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -85,11 +78,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch((error) => {
-          console.log('[Service Worker] Fetch failed; returning offline page if available:', error);
-          // Return a custom offline response if available
+          console.log('[Service Worker] Fetch failed:', error);
           return caches.match('/ResilientCare/index.html').catch(() => {
             return new Response(
-              'Sorry, ResilientCare is not available offline for this page.',
+              'Offline - ResilientCare is not available for this page',
               { status: 503, statusText: 'Service Unavailable', headers: new Headers({ 'Content-Type': 'text/plain' }) }
             );
           });
@@ -103,8 +95,8 @@ self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push notification received');
   const options = {
     body: event.data ? event.data.text() : 'Check in with yourself',
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%22100%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>RC</text></svg>',
-    badge: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/></svg>',
+    icon: '/ResilientCare/icon-192.png',
+    badge: '/ResilientCare/icon-192.png',
     vibrate: [100, 50, 100],
     tag: 'resilientcare-notification',
     requireInteraction: false
@@ -118,13 +110,11 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((windowClients) => {
-      // Focus existing window if open
       for (let i = 0; i < windowClients.length; i++) {
-        if (windowClients[i].url === '/ResilientCare/') {
+        if (windowClients[i].url.includes('/ResilientCare/')) {
           return windowClients[i].focus();
         }
       }
-      // Open new window if not already open
       if (clients.openWindow) {
         return clients.openWindow('/ResilientCare/');
       }
@@ -140,10 +130,8 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// Sync sessions with server when connection restored
 function syncSessions() {
   return new Promise((resolve) => {
-    // Get pending sessions from IndexedDB
     const request = indexedDB.open('ResilientCareDB', 1);
     request.onsuccess = function (event) {
       const db = event.target.result;
@@ -174,8 +162,8 @@ self.addEventListener('periodicsync', (event) => {
 function showCheckInReminder() {
   return self.registration.showNotification('Time for a Check-in', {
     body: 'Your wellbeing matters. Take a moment to vent or reflect.',
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%22100%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>🧘</text></svg>',
-    badge: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/></svg>',
+    icon: '/ResilientCare/icon-192.png',
+    badge: '/ResilientCare/icon-192.png',
     tag: 'check-in-reminder',
     requireInteraction: true,
     actions: [
