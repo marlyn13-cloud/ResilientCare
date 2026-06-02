@@ -31,7 +31,7 @@ class PWAInstallManager {
   registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('./service-worker.js', {
+        .register('./sw.js', {
           scope: '/ResilientCare/'
         })
         .then((registration) => {
@@ -263,8 +263,8 @@ class PWAInstallManager {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('ResilientCare', {
         body: message,
-        icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/><text x=%2250%25%22 y=%2250%25%22 font-size=%22100%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>RC</text></svg>',
-        badge: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22><rect fill=%22%234a90e2%22 width=%22192%22 height=%22192%22/></svg>'
+        icon: '/ResilientCare/icon-192.png',
+        badge: '/ResilientCare/icon-192.png'
       });
     }
   }
@@ -299,7 +299,7 @@ class PWAInstallManager {
 // Initialize PWA manager
 const pwaManager = new PWAInstallManager();
 
-// Request notification permission on page load (optional)
+// Request notification permission on page load
 window.addEventListener('load', () => {
   PWAInstallManager.requestNotificationPermission();
   pwaManager.handleUpdateAvailable();
