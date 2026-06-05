@@ -53,6 +53,8 @@
             <h3> This is not a crisis service. For Emergencies call 988 or call your local emergency number.</h3>
             <p style="font-size: 15px; margin-bottom: 4px;">Click a topic starter to get started.</p>
             
+        <details class="quick-starters-collapsible" id="starter-menu">
+                <summary class="collapsible-summary">Click a Quick Starter!</summary>
             <div class="quick-starters" id="quick-starters-grid">
                 <button class="starter-btn" onclick="sendChip('I feel sad. What are some steps to cope?')">
                     <span class="btn-emoji">😢</span> Sadness
@@ -94,7 +96,8 @@
                     <span class="btn-emoji">📉</span> Harsh Grading
                 </button>
             </div>
-        </main>
+        </details>
+    </main>
 
         <div class="input-area" id="chat-input-area" style="display: none;">
             <textarea id="vent-input" placeholder="Share what's on your mind..."></textarea>

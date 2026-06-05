@@ -983,6 +983,30 @@ textarea::placeholder {
     border-color: var(--primary-accent);
 }
 
+.quick-starters-collapsible{
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 10px;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+.collapsible-summary{
+    cursor: pointer;
+    font-weight: bold;
+    padding: 10px;
+    list-style: none; 
+}
+
+.collapsible-summary::after {
+    content: ' ▼'
+    float: right;
+}
+
+.quick-starters-collapsible[open] .collapsible-summar::after{
+    content: ' ▲';
+}
 .quick-starters {
     display: grid;
     /* Automatically creates columns that fit the screen */
